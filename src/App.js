@@ -1,24 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './Navbar';
+
+// --- Halaman utama ---
+import HomePage from './pages/HomePage';
+import CatalogPage from './pages/CatalogPage';
+import LendItemPage from './pages/LendItemPage';
+
+// --- Autentikasi ---
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+// --- Produk & Checkout ---
+import ProductDetailPage from './pages/ProductDetailPage';
+import CheckoutPage from './pages/CheckoutPage';
+
+// --- Pembayaran ---
+import PaymentVerificationPage from './pages/PaymentVerificationPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+
+// --- Profil Pengguna ---
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="app-container">
+        <Navbar />
+        <main>
+          <Routes>
+            {/* --- Halaman utama --- */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/lend" element={<LendItemPage />} />
+
+            {/* --- Autentikasi --- */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+            {/* --- Produk & Checkout --- */}
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/checkout/:id" element={<CheckoutPage />} />
+
+            {/* --- Pembayaran --- */}
+            <Route path="/payment/verifying" element={<PaymentVerificationPage />} />
+            <Route path="/payment/success" element={<PaymentSuccessPage />} />
+
+            {/* --- Profil Pengguna --- */}
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 

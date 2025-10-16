@@ -1,13 +1,478 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===========================================
+   🌑 GLOBAL BASE STYLES
+=========================================== */
+
+:root {
+  --bg: #121212;
+  --text: #ffffff;
+  --card-bg: #1e1e1e;
+  --border: #333;
+  --accent: #e53935;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* ===========================================
+   🧭 NAVBAR
+=========================================== */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 5%;
+  background-color: var(--bg);
+  width: 90%;
+  max-width: 1200px;
+  position: fixed; /* ✅ biar tetap di atas */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-logo h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.navbar-links a {
+  color: #e0e0e0;
+  text-decoration: none;
+  margin: 0 1rem;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.navbar-links a:hover {
+  color: var(--text);
+}
+
+.navbar-links a.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.navbar-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ===========================================
+   💫 BUTTONS
+=========================================== */
+
+.login-button {
+  background-color: transparent;
+  color: var(--text);
+  border: 1px solid #555;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #333;
+}
+
+.cta-button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.3s ease;
+}
+
+.cta-button:hover {
+  opacity: 0.9;
+}
+
+/* ===========================================
+   🧱 LAYOUT
+=========================================== */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+main {
+  padding-top: 100px;
+  width: 90%;
+  max-width: 1200px;
+}
+
+.container,
+.content-section,
+.page-container {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.hero-section {
+  text-align: center;
+  margin: 4rem 0;
+  padding: 2rem 0;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+  color: #b0bec5;
+  margin-top: 1rem;
+}
+
+/* ===========================================
+   🧩 CARDS & GRID
+=========================================== */
+
+.features-grid,
+.items-grid,
+.items-grid-categories {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.card,
+.product-card,
+.order-summary,
+.payment-method,
+.profile-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2rem;
+  transition: transform 0.2s ease-in-out;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
+/* ===========================================
+   📦 PRODUCT GRID & DETAILS
+=========================================== */
+
+.product-grid,
+.product-display.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.product-card.list-view {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 1rem;
+}
+
+.product-category {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.product-name {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.product-price {
+  font-weight: bold;
+  color: var(--accent);
+  margin: 0;
+}
+
+.price-unit {
+  font-weight: normal;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.product-description-list {
+  display: none;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.product-card.list-view .product-description-list {
+  display: block;
+}
+
+/* ===========================================
+   🧾 FORM STYLING
+=========================================== */
+
+.login-form,
+.register-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-form input,
+.register-form input,
+.lend-form input,
+.lend-form select {
+  padding: 0.8rem;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #222;
+  color: white;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+/* ===========================================
+   💼 PROFILE & CHECKOUT
+=========================================== */
+
+.profile-card {
+  max-width: 600px;
+  margin: 2rem auto;
+  text-align: left;
+}
+
+.profile-info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #333;
+}
+
+.profile-info-item:last-of-type {
+  border-bottom: none;
+}
+
+.logout-button {
+  width: 100%;
+  margin-top: 2rem;
+  background-color: #555;
+}
+/* ===============================
+   🌙 THEME VARIABLES
+================================= */
+
+:root {
+  --bg: #121212;
+  --text: #ffffff;
+  --card-bg: #1e1e1e;
+  --border: #333;
+  --accent: #e53935;
+}
+
+[data-theme="light"] {
+  --bg: #f5f5f5;
+  --text: #1a1a1a;
+  --card-bg: #ffffff;
+  --border: #ddd;
+  --accent: #e53935;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===============================
+   🌐 NAVBAR IMPROVEMENTS
+================================= */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg);
+  color: var(--text);
+  width: 100%;
+  max-width: 1200px;
+  padding: 1rem 2rem;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-logo h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navbar-links a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.navbar-links a:hover {
+  color: var(--accent);
+}
+
+.navbar-links a.active {
+  color: var(--accent);
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+/* Buttons refinement */
+.login-button,
+.cta-button {
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-button {
+  background-color: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.login-button:hover {
+  background-color: var(--border);
+}
+
+.cta-button {
+  background-color: var(--accent);
+  color: white;
+}
+
+.cta-button:hover {
+  opacity: 0.9;
+}
+
+/* ===============================
+   🌙 THEME TOGGLE BUTTON
+================================= */
+
+.theme-toggle {
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  border: 1px solid var(--border);
+  background-color: var(--card-bg);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+/* ===============================
+   📱 RESPONSIVE NAVBAR
+================================= */
+
+@media (max-width: 768px) {
+  .navbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .navbar-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .auth-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
