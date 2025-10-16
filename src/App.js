@@ -1,53 +1,92 @@
 // src/App.js
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './Navbar';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// --- Halaman utama ---
-import HomePage from './pages/HomePage';
-import CatalogPage from './pages/CatalogPage';
-import LendItemPage from './pages/LendItemPage';
+// --- Halaman Publik ---
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
-// --- Autentikasi ---
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-
-// --- Produk & Checkout ---
-import ProductDetailPage from './pages/ProductDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
+// --- Halaman Setelah Login ---
+import HomePage from "./pages/Home";
+import CatalogPage from "./pages/CatalogPage";
+import LendItemPage from "./pages/LendItemPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // --- Pembayaran ---
-import PaymentVerificationPage from './pages/PaymentVerificationPage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-
-// --- Profil Pengguna ---
-import ProfilePage from './pages/ProfilePage';
+import PaymentVerificationPage from "./pages/PaymentVerificationPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 
 function App() {
   return (
     <Router>
       <div className="app-container">
+        {/* Navbar akan muncul di semua halaman */}
         <Navbar />
+
         <main>
           <Routes>
-            {/* --- Halaman utama --- */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/catalog" element={<CatalogPage />} />
-            <Route path="/lend" element={<LendItemPage />} />
-
-            {/* --- Autentikasi --- */}
+            {/* --- Rute Publik --- */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* --- Produk & Checkout --- */}
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            <Route path="/checkout/:id" element={<CheckoutPage />} />
+            {/* --- Rute Setelah Login (Dilindungi) --- */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/catalog"
+              element={
+                <ProtectedRoute>
+                  <CatalogPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lend"
+              element={
+                <ProtectedRoute>
+                  <LendItemPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product/:id"
+              element={
+                <ProtectedRoute>
+                  <ProductDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout/:id"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* --- Pembayaran --- */}
+            {/* --- Rute Pembayaran --- */}
             <Route path="/payment/verifying" element={<PaymentVerificationPage />} />
             <Route path="/payment/success" element={<PaymentSuccessPage />} />
-
-            {/* --- Profil Pengguna --- */}
-            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </main>
       </div>

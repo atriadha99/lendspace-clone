@@ -476,3 +476,269 @@ body {
     justify-content: center;
   }
 }
+
+/* Tambahkan di mana saja di index.css */
+.theme-toggle-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+}
+
+/* ===============================
+   Halaman: Profil Pengguna
+================================= */
+
+/* Penampung utama halaman profil */
+.profile-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left; /* Menimpa text-align center dari .page-container */
+}
+
+/* Pesan saat data sedang dimuat */
+.loading {
+  text-align: center;
+  padding: 5rem;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+}
+
+/* Bagian header profil */
+.profile-header {
+  display: flex;
+  flex-wrap: wrap; /* Agar responsif di layar kecil */
+  gap: 2rem;
+  align-items: flex-start;
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 3rem;
+}
+
+.profile-pic {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--border);
+}
+
+.profile-info {
+  flex-grow: 1; /* Mengisi ruang yang tersedia */
+}
+
+.profile-info h2 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+  font-size: 2rem;
+}
+
+.profile-info .username {
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.profile-info p {
+  margin: 0.25rem 0;
+}
+
+.rating {
+  margin-top: 1rem;
+  color: var(--text-muted);
+}
+
+.rating span {
+  margin-left: 0.5rem;
+}
+
+/* Kartu Saldo */
+.balance-card {
+  background-color: var(--bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  min-width: 220px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.balance-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-muted);
+}
+
+.balance-card p {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: var(--accent);
+  margin: 0 0 1rem 0;
+}
+
+.withdraw-btn {
+  width: 100%;
+  background-color: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Bagian umum (Barang & Transaksi) */
+.section {
+  margin-bottom: 3rem;
+}
+
+.section h3 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Daftar barang yang disewakan */
+.item-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.item-card {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.item-card h4 {
+  margin-top: 0;
+}
+
+/* Styling untuk status (Available, Rented, dll.) */
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+}
+
+.status.available, .status.done {
+  background-color: #2e7d32; /* Hijau */
+}
+.status.rented {
+  background-color: #1565c0; /* Biru */
+}
+.status.ongoing {
+  background-color: #ef6c00; /* Oranye */
+}
+
+/* Tabel riwayat transaksi */
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transaction-table thead {
+  background-color: var(--card-bg);
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Tombol Logout */
+.logout-section {
+  margin-top: 2rem;
+  text-align: right; /* Agar tombol berada di kanan */
+}
+
+.logout-button {
+  background-color: #555;
+}
+
+/* ===========================================
+   HOMEPAGE (LOGGED IN) - NETFLIX STYLE
+=========================================== */
+.logged-in-home {
+  /* Hapus padding default dari page-container */
+  padding: 0 !important; 
+  margin-top: -100px; /* Tarik ke atas untuk mengisi ruang di bawah navbar */
+}
+
+.hero-banner {
+  height: 70vh;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 4rem;
+}
+
+/* Gradient overlay agar teks terbaca */
+.hero-banner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(18, 18, 18, 1) 10%, rgba(18, 18, 18, 0));
+}
+
+.hero-content {
+  z-index: 10;
+  max-width: 50%;
+}
+
+.hero-content h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero-content .cta-button {
+  font-size: 1.2rem;
+  padding: 0.8rem 2rem;
+}
+
+.rows-container {
+  padding: 0 4rem;
+  margin-top: -5rem; /* Tarik baris sedikit ke atas hero banner */
+  position: relative;
+  z-index: 11;
+}
+
+.product-row {
+  margin-bottom: 2rem;
+}
+
+.row-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.row-items {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 1rem;
+  padding-bottom: 1rem; /* Ruang untuk scrollbar */
+}
+
+/* Custom scrollbar */
+.row-items::-webkit-scrollbar { height: 8px; }
+.row-items::-webkit-scrollbar-track { background: #222; }
+.row-items::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+
+/* Atur ukuran ProductCard agar lebih kecil di dalam baris */
+.row-item-wrapper {
+  flex: 0 0 250px; /* Lebar tetap, jangan stretch/shrink */
+}
