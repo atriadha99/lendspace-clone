@@ -1,14 +1,20 @@
 // src/ThemeToggle.js
-import React, { useContext } from 'react';
-import { ThemeContext } from '../context/ThemeContext';
+import React from 'react';
+import { useColorMode, IconButton } from '@chakra-ui/react';
+import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 
 function ThemeToggle() {
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  // 1. Hook bawaan Chakra untuk mengelola dark/light mode
+  const { colorMode, toggleColorMode } = useColorMode();
 
   return (
-    <button onClick={toggleTheme} className="theme-toggle-button">
-      {theme === 'light' ? '🌙' : '☀️'}
-    </button>
+    <IconButton
+      aria-label="Toggle theme"
+      // 2. Tampilkan ikon yang sesuai
+      icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+      // 3. Panggil fungsi toggle saat diklik
+      onClick={toggleColorMode}
+    />
   );
 }
 

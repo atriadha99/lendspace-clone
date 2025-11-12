@@ -1,6 +1,6 @@
 // src/components/ProductRow.js
 import React from 'react';
-import ProductCard from '../ProductCard'; // Kita gunakan ulang ProductCard
+import ProductCard from './ProductCard'; // Kita gunakan ulang ProductCard
 
 function ProductRow({ title, products }) {
   return (

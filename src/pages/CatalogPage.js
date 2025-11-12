@@ -1,27 +1,31 @@
-// src/pages/CatalogPage.js
-import React, { useState, useEffect, useMemo } from 'react';
-import { productData } from '../data/Product';
-import ProductCard from '../ProductCard';
+import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { productData } from '../data/products';
+import ProductCard from '../components/ProductCard';
 import CatalogHeader from '../CatalogHeader';
 
 function CatalogPage() {
+  // --- ambil semua produk ---
   const [products] = useState(productData);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortOrder, setSortOrder] = useState('default');
-  const [view, setView] = useState('grid'); // 'grid' or 'list'
+  const [searchParams] = useSearchParams();
 
-  // Gunakan useMemo untuk efisiensi, agar filtering & sorting tidak berjalan jika tidak perlu
+  // --- ambil nilai dari query URL ---
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const [sortOrder, setSortOrder] = useState('default');
+  const [view, setView] = useState('grid'); // grid / list
+
+  // --- filter & sort produk pakai useMemo biar efisien ---
   const filteredAndSortedProducts = useMemo(() => {
     return products
       .filter((product) => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+        const matchesCategory =
+          selectedCategory === 'All' || product.category === selectedCategory;
         return matchesSearch && matchesCategory;
       })
       .sort((a, b) => {
         if (sortOrder === 'price-asc') {
-          // Hapus 'Rp ' dan '.' lalu ubah ke angka untuk perbandingan
           const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
           const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
           return priceA - priceB;
@@ -31,33 +35,39 @@ function CatalogPage() {
           const priceB = parseInt(b.price.replace(/[^0-9]/g, ''));
           return priceB - priceA;
         }
-        return 0; // 'default' order
+        return 0;
       });
   }, [products, searchTerm, selectedCategory, sortOrder]);
 
   return (
-    <div className="page-container">
-      <h1>Product Catalog</h1>
-      <p>Discover assets you can rent for your business needs.</p>
+    <div className="catalog-page">
+      <h1 className="page-title">Katalog Produk</h1>
+      <p className="page-subtitle">Temukan aset terbaik untuk disewa sesuai kebutuhanmu.</p>
 
+      {/* 🔍 Header kontrol filter, pencarian, dan tampilan */}
       <CatalogHeader
-        searchTerm={searchTerm} onSearchChange={setSearchTerm}
-        selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory}
-        sortOrder={sortOrder} onSortChange={setSortOrder}
-        view={view} onViewChange={setView}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        sortOrder={sortOrder}
+        onSortChange={setSortOrder}
+        view={view}
+        onViewChange={setView}
       />
 
-      {/* Gunakan class dinamis berdasarkan state 'view' */}
+      {/* 🧱 Tampilan produk */}
       <div className={`product-display ${view}`}>
-        {filteredAndSortedProducts.map((product) => (
-          <ProductCard key={product.id} product={product} view={view} />
-        ))}
+        {filteredAndSortedProducts.length > 0 ? (
+          filteredAndSortedProducts.map((product) => (
+            <ProductCard key={product.id} product={product} view={view} />
+          ))
+        ) : (
+          <p className="no-results">Tidak ada produk yang cocok dengan pencarianmu.</p>
+        )}
       </div>
-
-      {filteredAndSortedProducts.length === 0 && (
-        <p>No products found matching your criteria.</p>
-      )}
     </div>
   );
 }
+
 export default CatalogPage;

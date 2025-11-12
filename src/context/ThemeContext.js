@@ -5,13 +5,13 @@ export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-// Ganti useEffect yang lama dengan ini
-useEffect(() => {
-  // Solusi: Langsung set className, bukan .add()
-  // Ini akan menghapus class lama dan menambahkan yang baru jika ada.
-  document.body.className = theme === 'light' ? 'light-theme' : '';
-  localStorage.setItem('theme', theme);
-}, [theme]);
+
+  useEffect(() => {
+    // Set atribut data-theme di body
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };

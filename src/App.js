@@ -1,95 +1,49 @@
 // src/App.js
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./Navbar";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Box, Container } from '@chakra-ui/react'; // Import layout Chakra
 
-// --- Halaman Publik ---
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+// Import CSS khusus untuk library eksternal
+import './global-overrides.css';
 
-// --- Halaman Setelah Login ---
-import HomePage from "./pages/Home";
-import CatalogPage from "./pages/CatalogPage";
-import LendItemPage from "./pages/LendItemPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import ProfilePage from "./pages/ProfilePage";
-
-// --- Pembayaran ---
-import PaymentVerificationPage from "./pages/PaymentVerificationPage";
-import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+// Import Halaman & Komponen
+import Navbar from './Navbar';
+import Home from './pages/Home';
+import CatalogPage from './pages/CatalogPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import LendItemPage from './pages/LendItemPage';
+import ProfilePage from './pages/ProfilePage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import CheckoutPage from './pages/CheckoutPage';
+import PaymentGatewayPage from './pages/PaymentGatewayPage';
+import PaymentVerificationPage from './pages/PaymentVerificationPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
-      <div className="app-container">
-        {/* Navbar akan muncul di semua halaman */}
+      <Box w="100%" minH="100vh">
         <Navbar />
-
-        <main>
+        {/* Container Chakra akan memusatkan konten kita */}
+        <Container as="main" maxW="container.xl" pt="150px">
           <Routes>
-            {/* --- Rute Publik --- */}
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-
-            {/* --- Rute Setelah Login (Dilindungi) --- */}
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/catalog"
-              element={
-                <ProtectedRoute>
-                  <CatalogPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/lend"
-              element={
-                <ProtectedRoute>
-                  <LendItemPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/product/:id"
-              element={
-                <ProtectedRoute>
-                  <ProductDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/checkout/:id"
-              element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* --- Rute Pembayaran --- */}
+            
+            <Route path="/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+            <Route path="/lend" element={<ProtectedRoute><LendItemPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/product/:id" element={<ProtectedRoute><ProductDetailPage /></ProtectedRoute>} />
+            <Route path="/checkout/:id" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+            
+            <Route path="/payment-gateway" element={<PaymentGatewayPage />} />
             <Route path="/payment/verifying" element={<PaymentVerificationPage />} />
             <Route path="/payment/success" element={<PaymentSuccessPage />} />
           </Routes>
-        </main>
-      </div>
+        </Container>
+      </Box>
     </Router>
   );
 }

@@ -1,7 +1,7 @@
 // src/pages/CheckoutPage.js
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { productData } from '../data/Product'; // Pastikan nama file data-nya sesuai
+import { productData } from '../data/products'; // Pastikan nama file data-nya sesuai
 
 function CheckoutPage() {
   const { id } = useParams();

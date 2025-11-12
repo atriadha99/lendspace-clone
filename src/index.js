@@ -1,23 +1,25 @@
+// src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';// 1. Import AuthProvider
+
+// 1. Import ChakraProvider
+import { ChakraProvider } from '@chakra-ui/react';
+
+// 2. Import AuthProvider (ini tetap diperlukan)
+import { AuthProvider } from './context/AuthContext';
+
+// 3. HAPUS 'import ./index.css' DARI SINI
+// 4. HAPUS 'import ./global-overrides.css' (Kita akan pindahkan)
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider> {/* 2. Bungkus App */}
+    {/* 5. Bungkus SEMUANYA dengan ChakraProvider */}
+    <ChakraProvider>
+      <AuthProvider>
         <App />
       </AuthProvider>
-    </ThemeProvider>
+    </ChakraProvider>
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
