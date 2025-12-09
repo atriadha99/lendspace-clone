@@ -1,6 +1,6 @@
-// src/context/AuthContext.jsx
+// src/context/AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
-import { account } from '../lib/appwrite';
+import { supabase } from '../lib/supabaseClient';
 
 export const AuthContext = createContext();
 
@@ -9,38 +9,48 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
-    const unsubscribe = account.onAuthStateChange((session) => {
-      setUser(session?.user || null);
+    // 1. Cek sesi saat aplikasi dimuat
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    checkSession();
+
+    // 2. Dengarkan perubahan (login/logout otomatis update state)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const checkUser = async () => {
-    try {
-      const current = await account.get();
-      setUser(current);
-    } catch (err) {
-      setUser(null);
-    }
-    setLoading(false);
-  };
-
+  // Fungsi Login
   const login = async (email, password) => {
-    await account.createEmailPasswordSession(email, password);
-    const current = await account.get();
-    setUser(current);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
   };
 
-  const register = async (email, password, name) => {
-    await account.create(ID.unique(), email, password, name);
-    await login(email, password);
+  // Fungsi Register
+  const register = async (email, password, fullName) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName } // Menyimpan nama di metadata user
+      }
+    });
+    if (error) throw error;
+    return data;
   };
 
+  // Fungsi Logout
   const logout = async () => {
-    await account.deleteSession('current');
-    setUser(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
   return (
