@@ -1,11 +1,19 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { storage } from '../lib/appwrite';
 
 function ProfilePage() {
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
+
+
+
+const uploadKTP = async (file) => {
+  const response = await storage.createFile('ktp_bucket', ID.unique(), file);
+  // simpan response.$id ke users.ktp_url
+};
 
   // --- Simulasi data user (sementara bisa ganti ke API) ---
   useEffect(() => {

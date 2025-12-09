@@ -1,56 +1,22 @@
-// src/ProductCard.js
-import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { 
-  Box, 
-  Image, 
-  Text, 
-  Badge, 
-  Heading, 
-  LinkBox, 
-  LinkOverlay 
-} from '@chakra-ui/react';
-import StarRating from './StarRating';
+import { Box, Image, Text, Badge } from '@chakra-ui/react';
 
-function ProductCard({ product }) {
-  // Ambil data dari prop (atau beri nilai default)
-  const { id, imageUrl, category, name, price, rating } = product;
-
+export default function ProductCard({ title, price, rating }) {
   return (
-    // 1. LinkBox adalah cara Chakra untuk membuat seluruh kartu bisa diklik
-    <LinkBox 
-      as="article"
-      borderWidth="1px" 
-      borderRadius="lg" 
+    <Box
+      borderRadius="lg"
       overflow="hidden"
-      bg="chakra-body-bg" // Otomatis ganti di dark/light mode
-      _hover={{ transform: 'translateY(-5px)', shadow: 'lg' }} // Efek hover
-      transition="all 0.2s ease-in-out"
+      cursor="pointer"
+      transition="all 0.3s"
+      _hover={{ transform: 'scale(1.08)', shadow: '2xl' }}
     >
-      <Image src={imageUrl || 'https://via.placeholder.com/300'} alt={name} h="180px" w="100%" objectFit="cover" />
-
-      <Box p={4}>
-        {/* 2. Badge untuk kategori */}
-        <Badge borderRadius="full" px="2" colorScheme="red">
-          {category || 'Uncategorized'}
-        </Badge>
-
-        {/* 3. LinkOverlay adalah link yang sesungguhnya */}
-        <LinkOverlay as={RouterLink} to={`/product/${id}`}>
-          <Heading as="h4" size="sm" mt="2" noOfLines={1}>
-            {name || 'Nama Produk'}
-          </Heading>
-        </LinkOverlay>
-
-        {/* 4. Tampilkan rating jika ada */}
-        {rating && <StarRating rating={rating} />}
-
-        <Text fontWeight="bold" fontSize="lg" color="red.500" mt="2">
-          {price || 'Rp 0'}
-        </Text>
+      <Box height="300px" bg="gray.800" position="relative">
+        <Image src="/api/placeholder/400/600" alt={title} height="100%" width="100%" objectFit="cover" />
+        <Badge position="absolute" top="2" right="2" colorScheme="red">{rating} ★</Badge>
       </Box>
-    </LinkBox>
+      <Box p={3}>
+        <Text fontWeight="bold" noOfLines={2}>{title}</Text>
+        <Text color="#E50914" fontWeight="bold">{price}</Text>
+      </Box>
+    </Box>
   );
 }
-
-export default ProductCard;
