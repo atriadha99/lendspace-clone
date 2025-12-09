@@ -1,54 +1,120 @@
-// src/components/Navbar.jsx
-import { Box, Flex, Heading, Input, InputGroup, InputLeftElement } from '@chakra-ui/react';
-import { SearchIcon } from '@chakra-ui/icons';
-import { useState, useEffect } from 'react';
+// src/components/Navbar.js
+import React, { useContext, useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+// 1. Import komponen Chakra UI (Termasuk Button yang sebelumnya error)
+import {
+  Box,
+  Flex,
+  Heading,
+  Button,
+  Input,
+  InputGroup,
+  InputRightElement,
+  IconButton,
+  HStack,
+  useColorMode,
+  useColorModeValue,
+  Link,
+  VStack
+} from '@chakra-ui/react';
+import { SearchIcon, SunIcon, MoonIcon } from '@chakra-ui/icons';
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+const Navbar = () => {
+  // 2. Ambil 'user' dan 'logout' dari AuthContext (Memperbaiki error 'user is not defined')
+  const { user, logout } = useContext(AuthContext);
+  
+  const { colorMode, toggleColorMode } = useColorMode();
+  const navigate = useNavigate();
+  
+  // State lokal untuk pencarian (opsional, agar input bisa diketik)
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const bg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/catalog?search=${searchTerm}`);
+    }
+  };
 
   return (
-    <Box
-      position="fixed"
-      top="0"
-      left="0"
-      right="0"
-      zIndex="999"
-      bg={scrolled ? 'rgba(0,0,0,0.95)' : 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)'}
-      transition="all 0.4s"
-      py={4}
-      px={8}
+    <Box 
+      as="header" 
+      position="fixed" 
+      top="0" 
+      w="100%" 
+      zIndex="1000" 
+      bg={bg} 
+      borderBottom="1px" 
+      borderColor={borderColor} 
+      px={4} 
+      py={3}
     >
-      {user && (
-  <Button onClick={toggleRole} colorScheme={user.role === 'lender' ? 'red' : 'gray'}>
-    Mode: {user.role === 'lender' ? 'Lender' : 'Buyer'}
-  </Button>
-)}
-      <Flex align="center" justify="space-between" maxW="1400px" mx="auto">
-        <Flex align="center" gap={10}>
-          <Heading size="xl" color="#E50914" fontWeight="900" letterSpacing="tight">
-            LENDSPACE
-          </Heading>
-          <Flex gap={8} fontWeight="600" display={{ base: 'none', md: 'flex' }}>
-            <Box _hover={{ color: '#E50914' }}>Beranda</Box>
-            <Box _hover={{ color: '#E50914' }}>Barang</Box>
-            <Box _hover={{ color: '#E50914' }}>Jasa</Box>
-            <Box _hover={{ color: '#E50914' }}>Trending</Box>
-          </Flex>
-        </Flex>
+      <Flex alignItems="center" gap={4} maxW="1200px" mx="auto">
+        {/* Logo */}
+        <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
+          <Heading size="lg" color="red.500" cursor="pointer">Lendspace</Heading>
+        </Link>
 
-        <InputGroup maxW="500px" bg="rgba(0,0,0,0.6)" border="1px solid #333">
-          <InputLeftElement>
-            <SearchIcon color="gray.400" />
-          </InputLeftElement>
-          <Input placeholder="Cari kamera, mobil, fotografer, alat berat..." variant="filled" />
-        </InputGroup>
+        {/* Kategori Button (Hanya tampil di Desktop) */}
+        <Button variant="ghost" display={{ base: 'none', md: 'block' }}>Kategori</Button>
+
+        {/* Search Bar */}
+        <Box flex="1" as="form" onSubmit={handleSearch}>
+          <InputGroup size="md">
+            <Input 
+              placeholder="Cari barang di Lendspace..." 
+              borderRadius="md" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <InputRightElement>
+              <IconButton 
+                icon={<SearchIcon />} 
+                size="sm" 
+                variant="ghost" 
+                aria-label="Search" 
+                type="submit"
+              />
+            </InputRightElement>
+          </InputGroup>
+        </Box>
+
+        {/* Actions (Login/Register/Theme/Profile) */}
+        <HStack spacing={2}>
+          <IconButton 
+            icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} 
+            onClick={toggleColorMode} 
+            variant="ghost" 
+            aria-label="Toggle Theme"
+          />
+          
+          {user ? (
+            <>
+              <Link as={RouterLink} to="/profile">
+                <Button variant="ghost">Profil</Button>
+              </Link>
+              <Button colorScheme="red" size="sm" onClick={handleLogout}>Logout</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>Masuk</Button>
+              <Button colorScheme="red" size="sm" onClick={() => navigate('/register')}>Daftar</Button>
+            </>
+          )}
+        </HStack>
       </Flex>
     </Box>
   );
-}
+};
+
+export default Navbar;

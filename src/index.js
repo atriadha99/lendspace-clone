@@ -2,24 +2,24 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-
-// 1. Import ChakraProvider
 import { ChakraProvider } from '@chakra-ui/react';
-
-// 2. Import AuthProvider (ini tetap diperlukan)
 import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter } from 'react-router-dom'; // 1. Import ini
 
-// 3. HAPUS 'import ./index.css' DARI SINI
-// 4. HAPUS 'import ./global-overrides.css' (Kita akan pindahkan)
+// Import CSS carousel (jika ada)
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {/* 5. Bungkus SEMUANYA dengan ChakraProvider */}
     <ChakraProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      {/* 2. Bungkus AuthProvider & App dengan BrowserRouter */}
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
     </ChakraProvider>
   </React.StrictMode>
 );

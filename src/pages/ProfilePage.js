@@ -1,7 +1,9 @@
 // src/pages/ProfilePage.js
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { supabase } from '../lib/supabaseClient'; 
+
 import { 
   Box, 
   Flex, 
@@ -21,90 +23,101 @@ import {
   Td,
   TableContainer,
   useColorModeValue,
-  Spinner,
   Container,
   Divider,
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText
+  StatHelpText,
+  Input,
+  useToast
 } from "@chakra-ui/react";
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
-  const [userData, setUserData] = useState(null);
+  // Kita gunakan optional chaining (?.) agar tidak error jika context belum siap
+  const auth = useContext(AuthContext);
+  const user = auth?.user; 
+  const logout = auth?.logout;
 
-  // Warna dinamis untuk Dark/Light mode
+  const toast = useToast();
+  const [uploading, setUploading] = useState(false);
+
+  // --- HARD FIX: INISIALISASI DATA LANGSUNG (JANGAN NULL) ---
+  // Kita isi data default langsung di sini agar halaman PASTI muncul
+  const [userData, setUserData] = useState({
+    name: user?.user_metadata?.full_name || "Dika Dhaniska (Demo)",
+    username: user?.email || "@pengguna_baru",
+    email: user?.email || "email@contoh.com",
+    phone: "0812-3456-7890",
+    address: "Jakarta, Indonesia",
+    balance: 500000,
+    rating: 4.8,
+    joined: "Januari 2025",
+    profilePic: "https://bit.ly/broken-link", 
+    items: [
+      {
+        name: "Kamera Sony A7III",
+        price: 350000,
+        unit: "/ hari",
+        status: "Available",
+      },
+      {
+        name: "Lensa 24-70mm GM",
+        price: 200000,
+        unit: "/ hari",
+        status: "Rented",
+      }
+    ],
+    transactions: [
+      {
+        id: "#TRX-999",
+        item: "Lighting Godox",
+        date: "20 Okt 2025",
+        status: "Selesai",
+      }
+    ],
+  });
+
   const bgCard = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
-  // --- Simulasi data user (Nanti diganti fetch dari Supabase) ---
-  useEffect(() => {
-    const dummyUser = {
-      name: "Dika Dhaniska",
-      username: "@dika.dev",
-      email: "dika@example.com",
-      phone: "08123456789",
-      address: "Bandung, Jawa Barat",
-      balance: 250000,
-      rating: 4.8,
-      joined: "Maret 2024",
-      profilePic: "https://bit.ly/dan-abramov", // Contoh avatar
-      items: [
-        {
-          name: "Kamera Canon EOS 80D",
-          price: 150000,
-          unit: "/ hari",
-          status: "Available",
-        },
-        {
-          name: "Tripod Carbon Fiber",
-          price: 50000,
-          unit: "/ hari",
-          status: "Rented",
-        },
-      ],
-      transactions: [
-        {
-          id: "#TX1234",
-          item: "Lensa 50mm f/1.8",
-          date: "12 Okt 2025",
-          status: "Selesai",
-        },
-        {
-          id: "#TX1241",
-          item: "Lighting Kit",
-          date: "10 Okt 2025",
-          status: "Berlangsung",
-        },
-      ],
-    };
+  const uploadKTP = async (event) => {
+    try {
+      setUploading(true);
+      if (!event.target.files || event.target.files.length === 0) return;
 
-    // Simulasi delay network
-    setTimeout(() => setUserData(dummyUser), 700);
-  }, []);
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `ktp/${fileName}`;
+
+      const { error } = await supabase.storage.from('ktp_bucket').upload(filePath, file);
+      if (error) throw error;
+
+      toast({ title: "Upload Sukses", status: "success", duration: 3000, isClosable: true });
+    } catch (error) {
+      toast({ title: "Gagal Upload", description: error.message, status: "error", duration: 3000, isClosable: true });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleLogout = async () => {
-    await logout();
+    if (logout) await logout();
     navigate("/login");
   };
 
-  if (!userData) {
-    return (
-      <Flex justify="center" align="center" h="50vh">
-        <Spinner size="xl" color="red.500" />
-      </Flex>
-    );
-  }
+  // --- HAPUS BAGIAN "IF LOADING RETURN SPINNER" ---
+  // Agar halaman langsung merender JSX di bawah ini
 
   return (
     <Container maxW="container.xl" py={8}>
       
-      {/* 1. HEADER SECTION (Profil & Saldo) */}
+      {/* 1. HEADER SECTION */}
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} mb={10}>
         
-        {/* Kartu Profil (Kiri) */}
+        {/* KARTU PROFIL */}
         <Box 
           gridColumn={{ md: "span 2" }} 
           p={6} 
@@ -116,20 +129,37 @@ function ProfilePage() {
         >
           <Flex direction={{ base: "column", sm: "row" }} align="center" gap={6}>
             <Avatar size="2xl" name={userData.name} src={userData.profilePic} />
-            <VStack align={{ base: "center", sm: "flex-start" }} spacing={1}>
+            <VStack align={{ base: "center", sm: "flex-start" }} spacing={1} flex={1}>
               <Heading size="lg">{userData.name}</Heading>
-              <Text color="gray.500" fontWeight="medium">{userData.username}</Text>
+              <Text color="gray.500" fontWeight="bold">{userData.username}</Text>
               <Text>{userData.email} • {userData.phone}</Text>
               <Text color="gray.500">{userData.address}</Text>
+              
               <HStack mt={2}>
                 <Badge colorScheme="yellow" fontSize="0.9em">⭐ {userData.rating}</Badge>
-                <Text fontSize="sm" color="gray.500">Bergabung {userData.joined}</Text>
+                <Badge colorScheme="blue" variant="outline">Member sejak {userData.joined}</Badge>
               </HStack>
+
+              <Box mt={4} w="100%">
+                <Text fontSize="xs" fontWeight="bold" mb={1} textTransform="uppercase" color="gray.500">
+                  Verifikasi Identitas (KTP)
+                </Text>
+                <Input 
+                    type="file" 
+                    size="sm" 
+                    p={1} 
+                    border="1px dashed"
+                    borderColor="gray.300"
+                    accept="image/*"
+                    onChange={uploadKTP}
+                    isDisabled={uploading}
+                />
+              </Box>
             </VStack>
           </Flex>
         </Box>
 
-        {/* Kartu Saldo (Kanan) */}
+        {/* KARTU SALDO */}
         <Box 
           p={6} 
           bg={bgCard} 
@@ -146,9 +176,9 @@ function ProfilePage() {
             <StatNumber fontSize="3xl" color="green.500">
               Rp {userData.balance.toLocaleString('id-ID')}
             </StatNumber>
-            <StatHelpText>Dapat ditarik kapan saja</StatHelpText>
+            <StatHelpText>Dapat ditarik ke rekening bank</StatHelpText>
           </Stat>
-          <Button mt={4} colorScheme="green" variant="outline" w="100%">
+          <Button mt={4} colorScheme="green" width="100%">
             Tarik Dana
           </Button>
         </Box>
@@ -156,10 +186,10 @@ function ProfilePage() {
 
       <Divider my={8} />
 
-      {/* 2. ITEM SECTION (Barang Saya) */}
+      {/* 2. ITEM SECTION */}
       <Box mb={10}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="md">Barang yang Disewakan</Heading>
+          <Heading size="md">Barang Saya</Heading>
           <Button size="sm" colorScheme="red">+ Tambah Barang</Button>
         </Flex>
         
@@ -172,11 +202,13 @@ function ProfilePage() {
               borderWidth="1px" 
               borderColor={borderColor} 
               borderRadius="lg"
-              _hover={{ shadow: "md" }}
+              position="relative"
+              overflow="hidden"
             >
+              <Box position="absolute" top={0} left={0} w="4px" h="100%" bg={item.status === "Available" ? "green.400" : "orange.400"} />
               <Flex justify="space-between" mb={2}>
                 <Heading size="sm" noOfLines={1}>{item.name}</Heading>
-                <Badge colorScheme={item.status === "Available" ? "green" : "blue"}>
+                <Badge colorScheme={item.status === "Available" ? "green" : "orange"}>
                   {item.status}
                 </Badge>
               </Flex>
@@ -189,7 +221,7 @@ function ProfilePage() {
         </SimpleGrid>
       </Box>
 
-      {/* 3. TRANSACTION SECTION (Tabel) */}
+      {/* 3. TRANSACTION SECTION */}
       <Box mb={10}>
         <Heading size="md" mb={6}>Riwayat Transaksi</Heading>
         <Box 
@@ -203,7 +235,7 @@ function ProfilePage() {
             <Table variant="simple">
               <Thead bg={useColorModeValue("gray.50", "gray.800")}>
                 <Tr>
-                  <Th>ID Transaksi</Th>
+                  <Th>ID</Th>
                   <Th>Barang</Th>
                   <Th>Tanggal</Th>
                   <Th>Status</Th>
@@ -212,19 +244,11 @@ function ProfilePage() {
               <Tbody>
                 {userData.transactions.map((tx, index) => (
                   <Tr key={index}>
-                    <Td fontWeight="medium">{tx.id}</Td>
+                    <Td fontWeight="bold">{tx.id}</Td>
                     <Td>{tx.item}</Td>
                     <Td>{tx.date}</Td>
                     <Td>
-                      <Badge 
-                        colorScheme={tx.status === "Selesai" ? "green" : "orange"}
-                        variant="subtle"
-                        px={2}
-                        py={1}
-                        borderRadius="md"
-                      >
-                        {tx.status}
-                      </Badge>
+                      <Badge colorScheme="green">{tx.status}</Badge>
                     </Td>
                   </Tr>
                 ))}
@@ -234,16 +258,16 @@ function ProfilePage() {
         </Box>
       </Box>
 
-      {/* 4. LOGOUT BUTTON */}
+      {/* LOGOUT BUTTON */}
       <Flex justify="center" mt={10} mb={10}>
         <Button 
           colorScheme="red" 
-          variant="ghost" 
+          variant="outline" 
           size="lg" 
           onClick={handleLogout}
-          width={{ base: "100%", md: "auto" }}
+          width={{ base: "100%", md: "300px" }}
         >
-          Logout dari Akun
+          Logout
         </Button>
       </Flex>
 
