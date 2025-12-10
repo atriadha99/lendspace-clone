@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Container } from '@chakra-ui/react';
@@ -10,12 +9,14 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import CatalogPage from './pages/CatalogPage'; // Import Catalog
-import ProfilePage from './pages/ProfilePage'; // Import Profile
-// ... import lainnya ...
-import WithdrawPage from './pages/WithdrawPage'; // 1. Import Withdraw
-import PaymentSuccessPage from './pages/PaymentSuccessPage'; // 2. Import Success
+import CatalogPage from './pages/CatalogPage';
+import ProfilePage from './pages/ProfilePage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import WithdrawPage from './pages/WithdrawPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import ChatPage from './pages/ChatPage';
 
 function App() {
   return (
@@ -23,19 +24,19 @@ function App() {
       <Navbar />
       <Container maxW="container.xl" pt="80px" pb="10">
         <Routes>
-          {/* ... route yang sudah ada ... */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           
-          {/* 3. TAMBAHKAN ROUTE INI */}
+          {/* Halaman Transaksi */}
+          <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/withdraw" element={<WithdrawPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
-          <Route path="/payment-success" element={<PaymentSuccessPage />} />
-          
+          <Route path="/chat/:receiverId" element={<ChatPage />} />
         </Routes>
       </Container>
     </Box>

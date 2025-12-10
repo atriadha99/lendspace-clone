@@ -1,248 +1,278 @@
-// src/pages/ProductDetailPage.js
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+// Sesuaikan path ini dengan struktur folder Anda
 import { supabase } from '../lib/supabaseClient'; 
-import { AuthContext } from '../context/AuthContext'; // 1. IMPORT AUTH CONTEXT
-
 import {
-  Box, Container, Stack, Text, Image, Flex, VStack, Button, Heading,
-  SimpleGrid, StackDivider, useColorModeValue, List, ListItem, Input,
-  FormControl, FormLabel, Avatar, Badge, useToast
+  Box, Container, Grid, Image, Heading, Text, Badge, VStack, HStack,
+  Avatar, Divider, Button, Input, FormControl, FormLabel, Stack,
+  Alert, AlertIcon, Flex, useToast, Spinner
 } from '@chakra-ui/react';
-import { StarIcon } from '@chakra-ui/icons';
+import { ChatIcon } from '@chakra-ui/icons'; // Pastikan sudah install: npm i @chakra-ui/icons
 
-// --- DATA DUMMY (FALLBACK) ---
-const DUMMY_DETAILS = {
-  id: 1,
-  name: 'Kamera Canon EOS R5 (Demo)',
-  price: 500000,
-  description: 'Kamera mirrorless profesional (Data Dummy).',
-  image_url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32',
-  category: 'Photography',
-  rating: 4.8,
-  lender: { name: 'Budi Kamera', avatar: '', location: 'Jakarta' },
-  features: ['Video 8K', 'Full-frame']
-};
-
-export default function ProductDetailPage() {
+const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
-  
-  // 2. AMBIL DATA USER DARI CONTEXT
-  const { user } = useContext(AuthContext);
 
+  // State Data
   const [product, setProduct] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [renting, setRenting] = useState(false); // State loading saat klik sewa
-  
+
+  // State Form Sewa
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [totalDays, setTotalDays] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [renting, setRenting] = useState(false);
 
-  const colorText = useColorModeValue('gray.900', 'gray.400');
-  const bgBox = useColorModeValue('white', 'gray.900');
-  const dividerColor = useColorModeValue('gray.200', 'gray.600');
-  const yellowColor = useColorModeValue('yellow.500', 'yellow.300');
-  const lenderBg = useColorModeValue('gray.50', 'gray.700');
-  const descColor = useColorModeValue('gray.500', 'gray.400');
+  // Colors
+  const bgBox = "white"; 
 
-  // --- FETCH PRODUCT ---
+  // 1. Fetch Data Produk & User
   useEffect(() => {
-    async function fetchProduct() {
-      setLoading(true);
+    const fetchProductAndUser = async () => {
       try {
+        setLoading(true);
+        
+        // Cek User Login
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUser(currentUser);
+  
+        // Ambil Detail Produk + Data Pemilik (Lender)
         const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            profiles:lender_id (id, full_name, avatar_url, phone)
+          `)
           .eq('id', id)
           .single();
-
-        if (error || !data) throw new Error("Data tidak ditemukan");
-        
-        setProduct({
-          ...data,
-          lender: { name: data.lender_name || "Lender", location: "Jakarta" },
-          features: ["Kondisi Bagus", "Fungsi Normal", "Siap Pakai"] 
-        });
-
+  
+        if (error) throw error;
+        setProduct(data);
       } catch (err) {
-        console.warn("Menggunakan data dummy.");
-        setProduct({ ...DUMMY_DETAILS, id: id });
+        console.error(err);
+        toast({
+          title: "Gagal memuat produk",
+          description: err.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       } finally {
         setLoading(false);
       }
-    }
-    fetchProduct();
-  }, [id]);
+    };
 
-  // --- HITUNG HARGA ---
+    fetchProductAndUser();
+  }, [id, toast]);
+
+  // 2. Hitung total hari & harga realtime
   useEffect(() => {
-    if (startDate && endDate) {
+    if (startDate && endDate && product) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       const diffTime = Math.abs(end - start);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      // Jika tanggal sama, hitung 1 hari
       const days = diffDays === 0 ? 1 : diffDays;
       
       setTotalDays(days);
-      if (product) setTotalPrice(days * product.price);
+      setTotalPrice(days * product.price);
+    } else {
+      setTotalDays(0);
+      setTotalPrice(0);
     }
   }, [startDate, endDate, product]);
 
-  // --- 3. FUNGSI SEWA REAL (CONNECT DATABASE) ---
+  // 3. Logic Booking (Sewa)
   const handleRent = async () => {
-    // Validasi Tanggal
-    if (!startDate || !endDate) {
-      toast({ title: "Pilih Tanggal", status: "warning", duration: 3000 });
-      return;
+    if (!startDate || !endDate || !product) return;
+
+    if (!user) {
+        toast({ title: "Login diperlukan", status: "error" });
+        navigate('/login');
+        return;
     }
 
-    // Validasi Login
-    if (!user) {
-      toast({ 
-        title: "Login Diperlukan", 
-        description: "Silakan login untuk menyewa barang.", 
-        status: "error", 
-        duration: 3000 
-      });
-      navigate('/login');
-      return;
-    }
+    // Logic perhitungan DP
+    const depositPercent = product.deposit_percent || 30; // Default 30% jika null
+    const depositAmount = Math.round(totalPrice * depositPercent / 100);
 
     setRenting(true);
-
     try {
-      // A. Masukkan Data ke Tabel Bookings
-      const { error } = await supabase
+        const { error } = await supabase
         .from('bookings')
-        .insert([
-          {
-            user_id: user.id,          // Siapa yang sewa
-            product_id: product.id,    // Barang apa (ID harus valid di DB)
+        .insert({
+            user_id: user.id,
+            product_id: product.id,
             start_date: startDate,
             end_date: endDate,
+            total_days: totalDays,
             total_price: totalPrice,
-            payment_status: 'success', // Simulasi langsung lunas
-            status: 'active'
-          }
-        ]);
+            deposit_amount: depositAmount,
+            deposit_paid: true,                   // Anggap user bayar DP via gateway (simulasi)
+            remaining_amount: totalPrice - depositAmount,
+            status: 'confirmed',
+            payment_status: 'partial',            // Status: sudah DP
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // B. Sukses! Arahkan ke halaman sukses
-      navigate('/payment-success', {
-        state: {
-          title: "Booking Berhasil Disimpan! 🚀",
-          message: `Terima kasih ${user.user_metadata?.full_name || 'Kak'}. Data sewa ${product.name} telah tersimpan di sistem kami.`
-        }
-      });
+        toast({
+            title: "Booking Berhasil!",
+            description: `DP Rp ${depositAmount.toLocaleString('id-ID')} berhasil dicatat.`,
+            status: "success",
+            duration: 5000,
+            isClosable: true,
+        });
 
-    } catch (error) {
-      console.error(error);
-      // Fallback: Jika error (misal karena produk dummy ID-nya ga ada di DB), tetap tampilkan sukses simulasi
-      if (product.id === 1 && product.name.includes("Demo")) {
-         toast({ title: "Mode Demo", description: "Booking simulasi berhasil (Data Dummy).", status: "info" });
-         navigate('/payment-success', { state: { title: "Demo Sukses", message: "Ini hanya simulasi barang dummy." }});
-      } else {
-         toast({ title: "Gagal Booking", description: error.message, status: "error" });
-      }
+        // Arahkan ke halaman riwayat sewa (pastikan route ini ada)
+        navigate('/my-rentals'); 
+    } catch (err) {
+        toast({ title: "Gagal booking", description: err.message, status: "error" });
     } finally {
-      setRenting(false);
+        setRenting(false);
     }
   };
 
-  if (loading || !product) {
-    return <Container py={20}><Text align="center">Memuat produk...</Text></Container>;
-  }
+  if (loading) return <Flex justify="center" align="center" h="100vh"><Spinner size="xl" /></Flex>;
+  if (!product) return <Box p={10} textAlign="center">Produk tidak ditemukan</Box>;
+
+  // Cek kepemilikan
+  const isOwnProduct = user && product.lender_id === user.id;
 
   return (
-    <Container maxW={'container.xl'} py={10}>
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 8, md: 10 }} py={{ base: 18, md: 24 }}>
+    <Container maxW="7xl" py={10}>
+      <Grid templateColumns={{ base: "1fr", md: "3fr 2fr" }} gap={10}>
         
-        {/* GAMBAR */}
-        <Flex>
-          <Image rounded={'md'} alt={product.name} src={product.image_url} fit={'cover'} align={'center'} w={'100%'} h={{ base: '100%', sm: '400px', lg: '500px' }} boxShadow="lg" />
-        </Flex>
-
-        {/* DETAIL */}
-        <Stack spacing={{ base: 6, md: 10 }}>
-          <Box as={'header'}>
-            <Heading lineHeight={1.1} fontWeight={600} fontSize={{ base: '2xl', sm: '4xl', lg: '5xl' }}>
-              {product.name}
-            </Heading>
-            <Text color={colorText} fontWeight={300} fontSize={'2xl'}>
-              Rp {product.price.toLocaleString('id-ID')} / hari
+        {/* KOLOM KIRI: INFO PRODUK */}
+        <VStack align="stretch" spacing={6}>
+          <Box borderRadius="xl" overflow="hidden" boxShadow="md">
+            <Image 
+              src={product.image_url || "https://via.placeholder.com/800"} 
+              w="full" h="400px" objectFit="cover" 
+            />
+          </Box>
+          <Box>
+            <HStack spacing={2} mb={2}>
+              <Badge colorScheme={product.status === 'available' ? 'green' : 'red'}>
+                {product.status}
+              </Badge>
+              <Badge colorScheme="purple">{product.category}</Badge>
+            </HStack>
+            <Heading size="xl" mb={2}>{product.name}</Heading>
+            <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+              Rp {Number(product.price).toLocaleString('id-ID')} / hari
             </Text>
-            <Flex alignItems="center" mt={2}>
-               <Badge colorScheme="green" mr={2}>{product.category}</Badge>
-               <StarIcon color="yellow.400" />
-               <Text ml={1} fontWeight="bold">{product.rating}</Text>
+          </Box>
+
+          {/* AREA INFO PEMILIK & TOMBOL CHAT */}
+          <HStack spacing={4} p={4} borderWidth={1} borderRadius="lg" bg="gray.50" justify="space-between">
+            <Flex align="center" gap={3}>
+                <Avatar src={product.profiles?.avatar_url} name={product.profiles?.full_name} />
+                <Box>
+                <Text fontSize="sm" color="gray.500">Pemilik Barang</Text>
+                <Text fontWeight="bold">{product.profiles?.full_name || 'Lendspace User'}</Text>
+                </Box>
             </Flex>
-          </Box>
 
-          <Stack spacing={{ base: 4, sm: 6 }} direction={'column'} divider={<StackDivider borderColor={dividerColor} />}>
-            <VStack spacing={{ base: 4, sm: 6 }}>
-              <Text fontSize={'lg'} color={descColor}>{product.description}</Text>
-            </VStack>
-            <Box>
-              <Text fontSize={{ base: '16px', lg: '18px' }} color={yellowColor} fontWeight={'500'} textTransform={'uppercase'} mb={'4'}>
-                Kelengkapan & Fitur
-              </Text>
-              <List spacing={2}>
-                {product.features?.map((feature, index) => (
-                  <ListItem key={index}><Text as={'span'} fontWeight={'bold'}>•</Text> {feature}</ListItem>
-                ))}
-              </List>
-            </Box>
-            <Box bg={lenderBg} p={4} borderRadius="md">
-               <Flex align="center">
-                 <Avatar src={product.lender.avatar} name={product.lender.name} mr={4} />
-                 <Box>
-                   <Text fontWeight="bold">Pemilik: {product.lender.name}</Text>
-                   <Text fontSize="sm">{product.lender.location}</Text>
-                 </Box>
-               </Flex>
-            </Box>
-          </Stack>
-
-          {/* FORM BOOKING */}
-          <Box p={6} bg={bgBox} border="1px solid" borderColor="gray.200" borderRadius="lg" shadow="sm">
-            <Heading size="md" mb={4}>Atur Jadwal Sewa</Heading>
-            <Stack direction={{ base: 'column', md: 'row' }} spacing={4} mb={4}>
-              <FormControl>
-                <FormLabel>Tanggal Mulai</FormLabel>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Tanggal Selesai</FormLabel>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </FormControl>
-            </Stack>
-
-            {totalDays > 0 && (
-              <Flex justify="space-between" align="center" mb={4} p={3} bg="green.50" borderRadius="md">
-                <Text fontWeight="bold" color="green.700">Total {totalDays} Hari</Text>
-                <Text fontWeight="bold" fontSize="xl" color="green.700">
-                  Rp {totalPrice.toLocaleString('id-ID')}
-                </Text>
-              </Flex>
+            {/* Tombol Chat (Hanya muncul jika bukan barang sendiri & sudah login) */}
+            {!isOwnProduct && user && (
+                <Button 
+                    size="sm" 
+                    colorScheme="teal" 
+                    leftIcon={<ChatIcon />}
+                    onClick={() => navigate(`/chat/${product.lender_id}`)}
+                >
+                    Chat
+                </Button>
             )}
+          </HStack>
 
-            <Button
-              rounded={'none'} w={'full'} mt={2} size={'lg'} py={'7'}
-              bg={'red.500'} color={'white'} textTransform={'uppercase'}
-              _hover={{ transform: 'translateY(2px)', boxShadow: 'lg', bg: 'red.600' }}
-              onClick={handleRent}
-              isLoading={renting} // Tampilkan spinner saat proses insert DB
-              loadingText="Memproses Booking..."
-            >
-              Sewa Sekarang
-            </Button>
+          <Box>
+            <Heading size="md" mb={2}>Deskripsi</Heading>
+            <Text color="gray.600" whiteSpace="pre-line">{product.description}</Text>
           </Box>
-        </Stack>
-      </SimpleGrid>
+        </VStack>
+
+        {/* KOLOM KANAN: FORM SEWA */}
+        <Box>
+          <Box p={6} bg={bgBox} rounded="xl" shadow="lg" borderWidth={1} position="sticky" top="20px">
+            <Heading size="lg" mb={6}>Pilih Tanggal Sewa</Heading>
+            <Stack spacing={5}>
+              <FormControl isRequired>
+                <FormLabel>Tanggal Mulai</FormLabel>
+                <Input type="date" min={new Date().toISOString().split('T')[0]} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Tanggal Selesai</FormLabel>
+                <Input type="date" min={startDate || new Date().toISOString().split('T')[0]} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </FormControl>
+
+              {totalDays > 0 && (
+                <>
+                  <Box p={4} bg="gray.50" _dark={{ bg: "gray.700" }} borderRadius="lg">
+                    <VStack align="stretch" spacing={3}>
+                      <Flex justify="space-between">
+                        <Text>Sewa {totalDays} hari × Rp {Number(product.price).toLocaleString('id-ID')}</Text>
+                        <Text fontWeight="bold">Rp {totalPrice.toLocaleString('id-ID')}</Text>
+                      </Flex>
+                      
+                      {/* Tampilkan DP */}
+                      {(product.deposit_percent || 0) > 0 && (
+                        <>
+                          <Divider />
+                          <Flex justify="space-between" color="blue.600" fontWeight="bold">
+                            <Text>Uang Muka (DP {product.deposit_percent}%)</Text>
+                            <Text>Rp {Math.round(totalPrice * (product.deposit_percent || 0) / 100).toLocaleString('id-ID')}</Text>
+                          </Flex>
+                        </>
+                      )}
+                      
+                      <Divider />
+                      <Flex justify="space-between" fontSize="lg" fontWeight="extrabold" color="green.600">
+                        <Text>Bayar Sekarang</Text>
+                        <Text>Rp {Math.round(totalPrice * (product.deposit_percent || 30) / 100).toLocaleString('id-ID')}</Text>
+                      </Flex>
+
+                      {/* Info Sisa Bayar */}
+                      {(product.deposit_percent || 0) < 100 && (
+                        <Alert status="info" variant="left-accent" fontSize="sm" mt={2}>
+                          <AlertIcon />
+                          Sisa Rp {Math.round(totalPrice * (100 - (product.deposit_percent || 0)) / 100).toLocaleString('id-ID')} dibayar saat ambil barang
+                        </Alert>
+                      )}
+                    </VStack>
+                  </Box>
+
+                  {isOwnProduct ? (
+                    <Alert status="error" borderRadius="lg"><AlertIcon />Ini barang milikmu.</Alert>
+                  ) : (
+                    <Button 
+                        size="lg" 
+                        colorScheme="red" 
+                        w="full" 
+                        h="60px" 
+                        fontSize="xl" 
+                        isLoading={renting} 
+                        loadingText="Memproses..." 
+                        onClick={handleRent} 
+                        isDisabled={!startDate || !endDate}
+                    >
+                      Bayar DP & Booking
+                    </Button>
+                  )}
+                </>
+              )}
+            </Stack>
+          </Box>
+        </Box>
+      </Grid>
     </Container>
   );
-}
+};
+
+export default ProductDetailPage;
