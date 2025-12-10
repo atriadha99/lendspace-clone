@@ -16,7 +16,6 @@ import ProfilePage from './pages/ProfilePage'; // Import Profile
 import WithdrawPage from './pages/WithdrawPage'; // 1. Import Withdraw
 import PaymentSuccessPage from './pages/PaymentSuccessPage'; // 2. Import Success
 import ProductDetailPage from './pages/ProductDetailPage';
-import WithdrawPage from './pages/WithdrawPage'; 
 
 function App() {
   return (
