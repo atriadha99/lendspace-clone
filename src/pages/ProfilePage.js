@@ -30,57 +30,87 @@ import {
   StatNumber,
   StatHelpText,
   Input,
+  Textarea,
+  FormControl,
+  FormLabel,
+  IconButton,
   useToast
 } from "@chakra-ui/react";
+import { EditIcon, CheckIcon, CloseIcon } from "@chakra-ui/icons";
 
 function ProfilePage() {
   const navigate = useNavigate();
-  // Kita gunakan optional chaining (?.) agar tidak error jika context belum siap
   const auth = useContext(AuthContext);
   const user = auth?.user; 
   const logout = auth?.logout;
 
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // --- HARD FIX: INISIALISASI DATA LANGSUNG (JANGAN NULL) ---
-  // Kita isi data default langsung di sini agar halaman PASTI muncul
+  // --- 1. PINDAHKAN HOOKS KE ATAS SINI ---
+  const bgCard = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const tableHeaderBg = useColorModeValue("gray.50", "gray.800");
+  // Ini perbaikan utamanya: Definisikan warna input di sini, bukan di dalam JSX
+  const inputBg = useColorModeValue('gray.50', 'gray.600'); 
+
+  // --- DATA AWAL ---
   const [userData, setUserData] = useState({
-    name: user?.user_metadata?.full_name || "Dika Dhaniska (Demo)",
-    username: user?.email || "@pengguna_baru",
-    email: user?.email || "email@contoh.com",
+    name: user?.user_metadata?.full_name || "Dika Dhaniska",
+    username: user?.email || "@dika.dev",
+    email: user?.email || "dika@example.com",
     phone: "0812-3456-7890",
-    address: "Jakarta, Indonesia",
+    address: "Bandung, Jawa Barat",
     balance: 500000,
     rating: 4.8,
-    joined: "Januari 2025",
-    profilePic: "https://bit.ly/broken-link", 
+    joined: "Maret 2024",
+    profilePic: "https://bit.ly/dan-abramov", 
     items: [
-      {
-        name: "Kamera Sony A7III",
-        price: 350000,
-        unit: "/ hari",
-        status: "Available",
-      },
-      {
-        name: "Lensa 24-70mm GM",
-        price: 200000,
-        unit: "/ hari",
-        status: "Rented",
-      }
+      { name: "Kamera Canon EOS 80D", price: 150000, unit: "/ hari", status: "Available" },
+      { name: "Tripod Carbon Fiber", price: 50000, unit: "/ hari", status: "Rented" },
     ],
     transactions: [
-      {
-        id: "#TRX-999",
-        item: "Lighting Godox",
-        date: "20 Okt 2025",
-        status: "Selesai",
-      }
+      { id: "#TX1234", item: "Lensa 50mm f/1.8", date: "12 Okt 2025", status: "Selesai" }
     ],
   });
 
-  const bgCard = useColorModeValue("white", "gray.700");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserData({ ...userData, [name]: value });
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      if (user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            full_name: userData.name,
+            phone: userData.phone,
+          })
+          .eq('id', user.id);
+
+        if (error) throw error;
+      }
+      setIsEditing(false);
+      toast({
+        title: "Profil Diperbarui",
+        description: "Data berhasil disimpan.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Gagal Menyimpan",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
   const uploadKTP = async (event) => {
     try {
@@ -108,13 +138,9 @@ function ProfilePage() {
     navigate("/login");
   };
 
-  // --- HAPUS BAGIAN "IF LOADING RETURN SPINNER" ---
-  // Agar halaman langsung merender JSX di bawah ini
-
   return (
     <Container maxW="container.xl" py={8}>
       
-      {/* 1. HEADER SECTION */}
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} mb={10}>
         
         {/* KARTU PROFIL */}
@@ -126,21 +152,112 @@ function ProfilePage() {
           borderWidth="1px" 
           borderColor={borderColor}
           shadow="sm"
+          position="relative"
         >
-          <Flex direction={{ base: "column", sm: "row" }} align="center" gap={6}>
-            <Avatar size="2xl" name={userData.name} src={userData.profilePic} />
-            <VStack align={{ base: "center", sm: "flex-start" }} spacing={1} flex={1}>
-              <Heading size="lg">{userData.name}</Heading>
-              <Text color="gray.500" fontWeight="bold">{userData.username}</Text>
-              <Text>{userData.email} • {userData.phone}</Text>
-              <Text color="gray.500">{userData.address}</Text>
-              
-              <HStack mt={2}>
-                <Badge colorScheme="yellow" fontSize="0.9em">⭐ {userData.rating}</Badge>
-                <Badge colorScheme="blue" variant="outline">Member sejak {userData.joined}</Badge>
+          <Box position="absolute" top={4} right={4}>
+            {!isEditing ? (
+              <Button 
+                leftIcon={<EditIcon />} 
+                size="sm" 
+                onClick={() => setIsEditing(true)}
+              >
+                Edit
+              </Button>
+            ) : (
+              <HStack>
+                <IconButton 
+                  icon={<CloseIcon />} 
+                  size="sm" 
+                  colorScheme="red" 
+                  aria-label="Cancel"
+                  onClick={() => setIsEditing(false)} 
+                />
+                <IconButton 
+                  icon={<CheckIcon />} 
+                  size="sm" 
+                  colorScheme="green" 
+                  aria-label="Save"
+                  onClick={handleSaveProfile} 
+                />
               </HStack>
+            )}
+          </Box>
 
-              <Box mt={4} w="100%">
+          <Flex direction={{ base: "column", sm: "row" }} gap={6}>
+            <VStack>
+              <Avatar size="2xl" name={userData.name} src={userData.profilePic} />
+              {isEditing && (
+                 <Button size="xs" mt={2}>Ganti Foto</Button>
+              )}
+            </VStack>
+            
+            <VStack align="flex-start" spacing={3} flex={1} w="100%">
+              
+              {!isEditing ? (
+                // --- VIEW MODE ---
+                <>
+                  <Box>
+                    <Heading size="lg">{userData.name}</Heading>
+                    <Text color="gray.500" fontWeight="bold">{userData.username}</Text>
+                  </Box>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="sm" color="gray.500">Email</Text>
+                    <Text>{userData.email}</Text>
+                  </VStack>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="sm" color="gray.500">Nomor HP</Text>
+                    <Text>{userData.phone}</Text>
+                  </VStack>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="sm" color="gray.500">Alamat</Text>
+                    <Text>{userData.address}</Text>
+                  </VStack>
+                  <HStack mt={2}>
+                    <Badge colorScheme="yellow" fontSize="0.9em">⭐ {userData.rating}</Badge>
+                    <Badge colorScheme="blue" variant="outline">Member sejak {userData.joined}</Badge>
+                  </HStack>
+                </>
+              ) : (
+                // --- EDIT MODE ---
+                <VStack w="100%" spacing={3}>
+                  <FormControl>
+                    <FormLabel fontSize="sm">Nama Lengkap</FormLabel>
+                    <Input 
+                      name="name" 
+                      value={userData.name} 
+                      onChange={handleInputChange} 
+                      bg={inputBg} // Menggunakan variabel hook dari atas
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontSize="sm">Nomor HP</FormLabel>
+                    <Input 
+                      name="phone" 
+                      value={userData.phone} 
+                      onChange={handleInputChange} 
+                      bg={inputBg} // Menggunakan variabel hook dari atas
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontSize="sm">Alamat</FormLabel>
+                    <Textarea 
+                      name="address" 
+                      value={userData.address} 
+                      onChange={handleInputChange} 
+                      bg={inputBg} // Menggunakan variabel hook dari atas
+                    />
+                  </FormControl>
+                  
+                  <FormControl isReadOnly>
+                    <FormLabel fontSize="sm">Email (Tidak dapat diubah)</FormLabel>
+                    <Input value={userData.email} variant="filled" />
+                  </FormControl>
+                </VStack>
+              )}
+
+              <Box mt={4} w="100%" borderTop="1px dashed" borderColor="gray.300" pt={3}>
                 <Text fontSize="xs" fontWeight="bold" mb={1} textTransform="uppercase" color="gray.500">
                   Verifikasi Identitas (KTP)
                 </Text>
@@ -148,13 +265,12 @@ function ProfilePage() {
                     type="file" 
                     size="sm" 
                     p={1} 
-                    border="1px dashed"
-                    borderColor="gray.300"
                     accept="image/*"
                     onChange={uploadKTP}
                     isDisabled={uploading}
                 />
               </Box>
+
             </VStack>
           </Flex>
         </Box>
@@ -177,16 +293,20 @@ function ProfilePage() {
               Rp {userData.balance.toLocaleString('id-ID')}
             </StatNumber>
             <StatHelpText>Dapat ditarik ke rekening bank</StatHelpText>
-          </Stat>
-          <Button mt={4} colorScheme="green" width="100%">
-            Tarik Dana
-          </Button>
+          </Stat><Button 
+  mt={4} 
+  colorScheme="green" 
+  width="100%"
+  onClick={() => navigate('/withdraw')} // <-- Tambahkan ini
+>
+  Tarik Dana
+</Button>
         </Box>
       </SimpleGrid>
 
       <Divider my={8} />
 
-      {/* 2. ITEM SECTION */}
+      {/* ITEM SECTION */}
       <Box mb={10}>
         <Flex justify="space-between" align="center" mb={6}>
           <Heading size="md">Barang Saya</Heading>
@@ -221,7 +341,7 @@ function ProfilePage() {
         </SimpleGrid>
       </Box>
 
-      {/* 3. TRANSACTION SECTION */}
+      {/* TRANSACTION SECTION */}
       <Box mb={10}>
         <Heading size="md" mb={6}>Riwayat Transaksi</Heading>
         <Box 
@@ -233,7 +353,7 @@ function ProfilePage() {
         >
           <TableContainer>
             <Table variant="simple">
-              <Thead bg={useColorModeValue("gray.50", "gray.800")}>
+              <Thead bg={tableHeaderBg}>
                 <Tr>
                   <Th>ID</Th>
                   <Th>Barang</Th>
