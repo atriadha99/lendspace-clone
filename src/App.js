@@ -16,6 +16,7 @@ import ProfilePage from './pages/ProfilePage'; // Import Profile
 import WithdrawPage from './pages/WithdrawPage'; // 1. Import Withdraw
 import PaymentSuccessPage from './pages/PaymentSuccessPage'; // 2. Import Success
 import ProductDetailPage from './pages/ProductDetailPage';
+import WithdrawPage from './pages/WithdrawPage'; 
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/withdraw" element={<WithdrawPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/payment-success" element={<PaymentSuccessPage />} />
           
         </Routes>
       </Container>

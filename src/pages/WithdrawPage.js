@@ -25,7 +25,7 @@ function WithdrawPage() {
   
   const bgCard = useColorModeValue('white', 'gray.700');
 
-  // Saldo Dummy (Seharusnya diambil dari Context/Database)
+  // Saldo Dummy
   const currentBalance = 500000; 
 
   const handleWithdraw = (e) => {
@@ -56,13 +56,14 @@ function WithdrawPage() {
 
     setLoading(true);
 
-    // Simulasi Proses Server (2 detik)
+    // Simulasi Proses Server
     setTimeout(() => {
       setLoading(false);
-      // Arahkan ke halaman sukses dengan state pesan
+      // Arahkan ke halaman sukses
       navigate('/payment-success', { 
         state: { 
-          message: 'Penarikan dana sedang diproses. Dana akan masuk ke rekeningmu dalam 1x24 jam.' 
+          title: 'Permintaan Terkirim',
+          message: `Penarikan dana sebesar Rp ${parseInt(amount).toLocaleString('id-ID')} sedang diproses. Dana akan masuk dalam 1x24 jam.` 
         } 
       });
     }, 2000);

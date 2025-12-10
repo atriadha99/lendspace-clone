@@ -1,135 +1,76 @@
-// src/pages/WithdrawPage.js
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Container,
-  Heading,
-  VStack,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Button,
-  Text,
-  useToast,
-  HStack,
-  useColorModeValue
+// src/pages/PaymentSuccessPage.js
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Box, 
+  Heading, 
+  Text, 
+  Button, 
+  VStack, 
+  Icon, 
+  useColorModeValue,
+  Container
 } from '@chakra-ui/react';
+import { CheckCircleIcon } from '@chakra-ui/icons';
 
-function WithdrawPage() {
+function PaymentSuccessPage() {
   const navigate = useNavigate();
-  const toast = useToast();
-  const [loading, setLoading] = useState(false);
-  const [amount, setAmount] = useState('');
+  const location = useLocation();
   
+  // Mengambil data pesan dari halaman sebelumnya (Withdraw atau ProductDetail)
+  // Jika tidak ada data (misal user langsung ketik URL), gunakan pesan default.
+  const title = location.state?.title || 'Berhasil!';
+  const message = location.state?.message || 'Transaksi Anda telah berhasil diproses.';
+
   const bgCard = useColorModeValue('white', 'gray.700');
 
-  // Saldo Dummy (Seharusnya diambil dari Context/Database)
-  const currentBalance = 500000; 
-
-  const handleWithdraw = (e) => {
-    e.preventDefault();
-    
-    // Validasi Sederhana
-    if (!amount || amount < 10000) {
-      toast({
-        title: "Nominal tidak valid",
-        description: "Minimal penarikan Rp 10.000",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    if (amount > currentBalance) {
-      toast({
-        title: "Saldo tidak cukup",
-        description: "Pastikan nominal tidak melebihi saldo Anda.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    // Simulasi Proses Server (2 detik)
-    setTimeout(() => {
-      setLoading(false);
-      // Arahkan ke halaman sukses dengan state pesan
-      navigate('/payment-success', { 
-        state: { 
-          message: 'Penarikan dana sedang diproses. Dana akan masuk ke rekeningmu dalam 1x24 jam.' 
-        } 
-      });
-    }, 2000);
-  };
-
   return (
-    <Container maxW="container.sm" py={10}>
-      <VStack spacing={6} align="stretch">
-        <Heading size="lg">Tarik Dana</Heading>
-        
-        <Box p={6} bg={bgCard} borderRadius="xl" boxShadow="sm" border="1px solid" borderColor="gray.200">
-          <Text color="gray.500" mb={1}>Saldo Tersedia</Text>
-          <Heading size="xl" color="green.500" mb={6}>
-            Rp {currentBalance.toLocaleString('id-ID')}
-          </Heading>
+    <Box minH="80vh" display="flex" alignItems="center" justify="center">
+      <Container maxW="md">
+        <VStack 
+          bg={bgCard} 
+          p={10} 
+          borderRadius="2xl" 
+          boxShadow="xl" 
+          spacing={6} 
+          textAlign="center" 
+          borderWidth="1px"
+          borderColor={useColorModeValue('gray.100', 'gray.600')}
+        >
+          {/* Ikon Centang Besar */}
+          <Icon as={CheckCircleIcon} w={24} h={24} color="green.400" />
+          
+          <VStack spacing={2}>
+            <Heading size="xl" color="green.500">{title}</Heading>
+            <Text color="gray.500" fontSize="lg">
+              {message}
+            </Text>
+          </VStack>
 
-          <VStack as="form" spacing={4} onSubmit={handleWithdraw}>
-            <FormControl isRequired>
-              <FormLabel>Pilih Bank Tujuan</FormLabel>
-              <Select placeholder="Pilih Bank">
-                <option value="bca">BCA</option>
-                <option value="mandiri">Mandiri</option>
-                <option value="bri">BRI</option>
-                <option value="bni">BNI</option>
-                <option value="gopay">GoPay</option>
-                <option value="ovo">OVO</option>
-              </Select>
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel>Nomor Rekening / E-Wallet</FormLabel>
-              <Input type="number" placeholder="Contoh: 1234567890" />
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel>Nominal Penarikan</FormLabel>
-              <Input 
-                type="number" 
-                placeholder="Minimal Rp 10.000" 
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </FormControl>
-
-            {/* Tombol Pilihan Cepat */}
-            <HStack w="100%" spacing={2}>
-              <Button size="xs" onClick={() => setAmount(50000)}>50rb</Button>
-              <Button size="xs" onClick={() => setAmount(100000)}>100rb</Button>
-              <Button size="xs" onClick={() => setAmount(currentBalance)}>Semua</Button>
-            </HStack>
-
+          <VStack w="full" spacing={3} pt={4}>
             <Button 
-              type="submit" 
               colorScheme="green" 
               size="lg" 
-              w="100%" 
-              mt={4}
-              isLoading={loading}
-              loadingText="Memproses..."
+              w="full" 
+              onClick={() => navigate('/')}
             >
-              Konfirmasi Penarikan
+              Kembali ke Beranda
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="lg" 
+              w="full"
+              onClick={() => navigate('/profile')}
+            >
+              Cek Riwayat Transaksi
             </Button>
           </VStack>
-        </Box>
-      </VStack>
-    </Container>
+
+        </VStack>
+      </Container>
+    </Box>
   );
 }
 
-export default WithdrawPage;
+export default PaymentSuccessPage;
