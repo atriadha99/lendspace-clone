@@ -141,16 +141,47 @@ function CatalogPage() {
   const [sortOrder, setSortOrder] = useState('default');
 
   // 2. Fetch Data Supabase (Opsional - menimpa dummy jika ada data)
+ // Fetch Data Supabase
   useEffect(() => {
     async function fetchRealData() {
       try {
-        const { data, error } = await supabase.from('products').select('*');
-        if (!error && data && data.length > 0) {
-          console.log("Data asli ditemukan, mengganti dummy...");
-          setProducts(data);
+        console.log("Sedang mengambil data dari Supabase...");
+        
+        // Select semua kolom, urutkan dari yang terbaru
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error mengambil data:", error.message);
+          throw error;
+        }
+
+        // Cek di Console Browser (F12) untuk melihat data asli
+        console.log("Data berhasil diambil:", data);
+
+        if (data && data.length > 0) {
+          // Normalisasi data (jaga-jaga jika ada field yang null)
+          const validData = data.map(item => ({
+            ...item,
+            // Jika image_url kosong/rusak, pakai gambar placeholder
+            image_url: item.image_url || "https://via.placeholder.com/300?text=No+Image",
+            // Jika rating kosong, kasih default
+            rating: item.rating || 0,
+            // Jika kategori kosong, masukkan ke 'Others'
+            category: item.category || 'Others'
+          }));
+          
+          setProducts(validData);
+        } else {
+          console.warn("Database kosong atau RLS memblokir data.");
+          // Opsional: Tetap pakai dummy jika DB kosong, atau biarkan kosong
+          // setProducts(DUMMY_PRODUCTS); 
         }
       } catch (err) {
-        console.log("Menggunakan data dummy (Database belum siap/kosong).");
+        console.log("Gagal koneksi, menggunakan data dummy.");
+        // setProducts(DUMMY_PRODUCTS); // Uncomment jika ingin fallback ke dummy saat error
       }
     }
     fetchRealData();
