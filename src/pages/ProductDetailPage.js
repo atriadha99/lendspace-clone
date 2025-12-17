@@ -4,14 +4,18 @@ import { supabase } from '../lib/supabaseClient';
 import {
   Box, Container, Grid, Image, Heading, Text, VStack, HStack,
   Avatar, Divider, Button, Input, Stack,
-  Alert, AlertIcon, Flex, useToast, Spinner
+  Alert, AlertIcon, Flex, useToast, Spinner,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure, Center
 } from '@chakra-ui/react';
-import { ChatIcon } from '@chakra-ui/icons';
+import { ChatIcon, CheckCircleIcon } from '@chakra-ui/icons';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  
+  // Modal Control (Untuk Pop-up Pembayaran)
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [product, setProduct] = useState(null);
   const [user, setUser] = useState(null);
@@ -70,14 +74,20 @@ const ProductDetailPage = () => {
     });
   };
 
-  const handleRent = async () => {
+  // 1. Trigger saat tombol "Booking" diklik -> Buka Modal, Jangan langsung save DB
+  const onBookingClick = () => {
     if (!user) return navigate('/login');
-    
+    onOpen(); // Buka Pop-up QRIS
+  };
+
+  // 2. Proses Pembayaran & Simpan ke DB
+  const handlePaymentSuccess = async () => {
     setRenting(true);
     const depositPercent = product.deposit_percent || 30;
     const depositAmount = Math.round(totalPrice * depositPercent / 100);
 
     try {
+      // Simpan ke Supabase
       const { error } = await supabase.from('bookings').insert({
         user_id: user.id,
         product_id: product.id,
@@ -86,15 +96,18 @@ const ProductDetailPage = () => {
         total_days: totalDays,
         total_price: totalPrice,
         deposit_amount: depositAmount,
-        deposit_paid: true, 
+        deposit_paid: true, // Anggap sudah dibayar lunas DP-nya
         remaining_amount: totalPrice - depositAmount,
         status: 'confirmed',
         payment_status: 'partial'
       });
 
       if (error) throw error;
-      toast({ title: "Booking Berhasil!", status: "success" });
+      
+      onClose(); // Tutup Modal
+      toast({ title: "Pembayaran Berhasil!", description: "Booking telah dikonfirmasi.", status: "success", duration: 5000 });
       navigate('/my-rentals');
+      
     } catch (err) {
       toast({ title: "Gagal", description: err.message, status: "error" });
     } finally {
@@ -126,9 +139,7 @@ const ProductDetailPage = () => {
               <Text fontWeight="bold">{product.profiles?.full_name}</Text>
             </Flex>
             {!isOwnProduct && user && (
-              <Button leftIcon={<ChatIcon />} size="sm" onClick={handleChat}>
-                Chat
-              </Button>
+              <Button leftIcon={<ChatIcon />} size="sm" onClick={handleChat}>Chat</Button>
             )}
           </HStack>
           
@@ -160,22 +171,19 @@ const ProductDetailPage = () => {
                   <Text>Bayar DP ({product.deposit_percent || 30}%)</Text>
                   <Text>Rp {depositVal.toLocaleString()}</Text>
                 </Flex>
-                <Text fontSize="xs" mt={2} color="gray.500">
-                  *Sisa Rp {(totalPrice - depositVal).toLocaleString()} dibayarkan saat ambil barang.
-                </Text>
+                <Text fontSize="xs" mt={2} color="gray.500">*Sisa Rp {(totalPrice - depositVal).toLocaleString()} dibayarkan saat ambil barang.</Text>
               </Box>
             )}
 
             {isOwnProduct ? (
               <Alert status="warning" borderRadius="md"><AlertIcon />Ini barang Anda sendiri.</Alert>
             ) : (
-              /* --- BAGIAN YANG DIPERBAIKI (DIBUNGKUS <>) --- */
               <>
+                {/* Tombol diganti ke onBookingClick */}
                 <Button 
                   colorScheme="red" 
                   size="lg" 
-                  onClick={handleRent} 
-                  isLoading={renting} 
+                  onClick={onBookingClick} 
                   isDisabled={!totalDays}
                   width="full"
                 >
@@ -186,11 +194,54 @@ const ProductDetailPage = () => {
                   Tanya Ketersediaan
                 </Button>
               </>
-              /* --------------------------------------------- */
             )}
           </Stack>
         </Box>
       </Grid>
+
+      {/* --- MODAL SIMULASI PEMBAYARAN QRIS --- */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Pembayaran DP</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="center" py={4}>
+              <Text fontSize="sm" color="gray.500">Silakan scan QRIS di bawah ini</Text>
+              
+              {/* Gambar QRIS Dummy */}
+              <Box p={2} border="2px solid" borderColor="gray.200" borderRadius="lg">
+                <Image 
+                  src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" 
+                  boxSize="200px" 
+                />
+              </Box>
+
+              <Text fontWeight="bold" fontSize="2xl" color="red.500">
+                Rp {depositVal.toLocaleString()}
+              </Text>
+              
+              <Alert status="info" fontSize="sm" borderRadius="md">
+                <AlertIcon />
+                Ini adalah simulasi. Klik tombol di bawah untuk konfirmasi pembayaran otomatis.
+              </Alert>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>Batal</Button>
+            <Button 
+              colorScheme="green" 
+              onClick={handlePaymentSuccess} 
+              isLoading={renting}
+              leftIcon={<CheckCircleIcon />}
+            >
+              Saya Sudah Bayar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
     </Container>
   );
 };

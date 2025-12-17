@@ -11,6 +11,7 @@ import MyRentalsPage from './pages/MyRentalsPage';
 import ChatPage from './pages/ChatPage';
 import InboxPage from './pages/InboxPage';
 import TermsPage from './pages/TermsPage';
+import CatalogPage from './pages/CatalogPage';
 
 // --- IMPORT HALAMAN YANG TADI ERROR ---
 import AddProductPage from './pages/AddProductPage';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/add-product" element={<AddProductPage />} />
         <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/incoming-orders" element={<IncomingOrdersPage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
         
       </Routes>
     </div>
