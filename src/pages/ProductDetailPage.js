@@ -31,8 +31,6 @@ const ProductDetailPage = () => {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         setUser(currentUser);
 
-        // NOTE: Pastikan di DB kolomnya 'lender_id' atau 'user_id'. Sesuaikan di sini.
-        // Asumsi standar: lender_id
         const { data, error } = await supabase
           .from('products')
           .select(`*, profiles:lender_id (id, full_name, avatar_url)`)
@@ -60,6 +58,18 @@ const ProductDetailPage = () => {
     }
   }, [startDate, endDate, product]);
 
+  const handleChat = () => {
+    navigate(`/chat/${product.lender_id}`, {
+      state: { 
+        productContext: {
+          name: product.name,
+          image: product.image_url,
+          price: product.price
+        } 
+      }
+    });
+  };
+
   const handleRent = async () => {
     if (!user) return navigate('/login');
     
@@ -76,7 +86,7 @@ const ProductDetailPage = () => {
         total_days: totalDays,
         total_price: totalPrice,
         deposit_amount: depositAmount,
-        deposit_paid: true, // Simulasi bayar DP sukses
+        deposit_paid: true, 
         remaining_amount: totalPrice - depositAmount,
         status: 'confirmed',
         payment_status: 'partial'
@@ -92,7 +102,7 @@ const ProductDetailPage = () => {
     }
   };
 
-  if (loading) return <Flex justify="center" h="100vh"><Spinner /></Flex>;
+  if (loading) return <Flex justify="center" h="100vh" align="center"><Spinner size="xl" /></Flex>;
   if (!product) return <Box p={10}>Produk tidak ditemukan</Box>;
 
   const isOwnProduct = user && product.lender_id === user.id;
@@ -101,45 +111,82 @@ const ProductDetailPage = () => {
   return (
     <Container maxW="7xl" py={10}>
       <Grid templateColumns={{ base: "1fr", md: "3fr 2fr" }} gap={10}>
+        
+        {/* KOLOM KIRI */}
         <VStack align="stretch" spacing={6}>
           <Image src={product.image_url} h="400px" objectFit="cover" borderRadius="xl" />
           <Heading>{product.name}</Heading>
-          <Text fontSize="2xl" color="blue.600">Rp {product.price.toLocaleString()}/hari</Text>
+          <Text fontSize="2xl" color="red.500" fontWeight="bold">
+            Rp {product.price.toLocaleString()}/hari
+          </Text>
           
-          <HStack p={4} bg="gray.50" justify="space-between" borderRadius="lg">
+          <HStack p={4} bg="gray.50" justify="space-between" borderRadius="lg" border="1px solid" borderColor="gray.200">
             <Flex align="center" gap={3}>
-              <Avatar src={product.profiles?.avatar_url} />
+              <Avatar src={product.profiles?.avatar_url} name={product.profiles?.full_name} />
               <Text fontWeight="bold">{product.profiles?.full_name}</Text>
             </Flex>
             {!isOwnProduct && user && (
-              <Button leftIcon={<ChatIcon />} onClick={() => navigate(`/chat/${product.lender_id}`)}>Chat</Button>
+              <Button leftIcon={<ChatIcon />} size="sm" onClick={handleChat}>
+                Chat
+              </Button>
             )}
           </HStack>
-          <Text>{product.description}</Text>
+          
+          <Box>
+            <Heading size="sm" mb={2}>Deskripsi</Heading>
+            <Text color="gray.600" style={{ whiteSpace: 'pre-line' }}>{product.description}</Text>
+          </Box>
         </VStack>
 
-        <Box p={6} bg="white" shadow="lg" borderRadius="xl" h="fit-content">
-          <Heading size="md" mb={4}>Sewa Barang</Heading>
+        {/* KOLOM KANAN */}
+        <Box p={6} bg="white" shadow="xl" borderRadius="xl" h="fit-content" border="1px solid" borderColor="gray.100">
+          <Heading size="md" mb={4}>Atur Jadwal Sewa</Heading>
           <Stack spacing={4}>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <Box>
+              <Text fontSize="sm" mb={1} fontWeight="bold">Mulai Sewa</Text>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </Box>
+            <Box>
+              <Text fontSize="sm" mb={1} fontWeight="bold">Selesai Sewa</Text>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </Box>
             
             {totalDays > 0 && (
-              <Box bg="gray.50" p={4} borderRadius="md">
-                <Flex justify="space-between"><Text>Total Sewa</Text><Text>Rp {totalPrice.toLocaleString()}</Text></Flex>
-                <Divider my={2} />
-                <Flex justify="space-between" fontWeight="bold" color="green.600">
+              <Box bg="red.50" p={4} borderRadius="md" border="1px dashed" borderColor="red.300">
+                <Flex justify="space-between"><Text>Durasi</Text><Text fontWeight="bold">{totalDays} Hari</Text></Flex>
+                <Flex justify="space-between" mt={1}><Text>Total Harga</Text><Text fontWeight="bold">Rp {totalPrice.toLocaleString()}</Text></Flex>
+                <Divider my={3} borderColor="red.200" />
+                <Flex justify="space-between" fontWeight="bold" color="red.600" fontSize="lg">
                   <Text>Bayar DP ({product.deposit_percent || 30}%)</Text>
                   <Text>Rp {depositVal.toLocaleString()}</Text>
                 </Flex>
-                <Text fontSize="xs" mt={2}>Sisa Rp {(totalPrice - depositVal).toLocaleString()} dibayar nanti.</Text>
+                <Text fontSize="xs" mt={2} color="gray.500">
+                  *Sisa Rp {(totalPrice - depositVal).toLocaleString()} dibayarkan saat ambil barang.
+                </Text>
               </Box>
             )}
 
             {isOwnProduct ? (
-              <Alert status="warning"><AlertIcon />Barang milik sendiri</Alert>
+              <Alert status="warning" borderRadius="md"><AlertIcon />Ini barang Anda sendiri.</Alert>
             ) : (
-              <Button colorScheme="red" onClick={handleRent} isLoading={renting} isDisabled={!totalDays}>Booking & Bayar DP</Button>
+              /* --- BAGIAN YANG DIPERBAIKI (DIBUNGKUS <>) --- */
+              <>
+                <Button 
+                  colorScheme="red" 
+                  size="lg" 
+                  onClick={handleRent} 
+                  isLoading={renting} 
+                  isDisabled={!totalDays}
+                  width="full"
+                >
+                  Booking & Bayar DP
+                </Button>
+                
+                <Button variant="outline" width="full" onClick={handleChat} leftIcon={<ChatIcon />}>
+                  Tanya Ketersediaan
+                </Button>
+              </>
+              /* --------------------------------------------- */
             )}
           </Stack>
         </Box>
@@ -147,4 +194,5 @@ const ProductDetailPage = () => {
     </Container>
   );
 };
+
 export default ProductDetailPage;

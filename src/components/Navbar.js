@@ -4,10 +4,9 @@ import { supabase } from '../lib/supabaseClient';
 import {
   Box, Flex, Text, Button, Stack, useColorModeValue,
   Menu, MenuButton, MenuList, MenuItem, Avatar,
-  IconButton, Collapse, useDisclosure, HStack
+  IconButton, Collapse, useDisclosure, HStack, Icon
 } from '@chakra-ui/react';
-// PERBAIKAN 1: Tambahkan ChatIcon di sini
-import { HamburgerIcon, CloseIcon, AddIcon, ChatIcon } from '@chakra-ui/icons';
+import { HamburgerIcon, CloseIcon, AddIcon, ChatIcon, ChevronRightIcon } from '@chakra-ui/icons';
 
 const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
@@ -15,6 +14,7 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
 
+  // --- LOGIC AUTH ---
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,6 +59,7 @@ const Navbar = () => {
         borderColor={useColorModeValue('gray.200', 'gray.900')}
         align={'center'}
       >
+        {/* 1. TOMBOL HAMBURGER (MOBILE ONLY) */}
         <Flex flex={{ base: 1, md: 'auto' }} ml={{ base: -2 }} display={{ base: 'flex', md: 'none' }}>
           <IconButton
             onClick={onToggle}
@@ -68,35 +69,39 @@ const Navbar = () => {
           />
         </Flex>
 
+        {/* 2. LOGO & MENU DESKTOP */}
         <Flex flex={{ base: 1 }} justify={{ base: 'center', md: 'start' }}>
           <Text
             textAlign={useColorModeValue('left', 'center')}
             fontFamily={'heading'}
             fontWeight="bold"
             fontSize="xl"
-            color={useColorModeValue('red.500', 'white')}
+            color={'red.500'}
             cursor="pointer"
             onClick={() => navigate('/')}
           >
             Lendspace
           </Text>
 
+          {/* Desktop Links */}
           <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
             <Stack direction={'row'} spacing={4} align="center">
-              <Link to="/">Home</Link>
+              <DesktopLink to="/" label="Home" />
               {user && (
                 <>
-                  <Link to="/my-rentals">Riwayat Sewa</Link>
-                  <Link to="/incoming-orders">Pesanan Masuk</Link>
+                  <DesktopLink to="/my-rentals" label="Riwayat Sewa" />
+                  <DesktopLink to="/incoming-orders" label="Pesanan Masuk" />
                 </>
               )}
             </Stack>
           </Flex>
         </Flex>
 
+        {/* 3. TOMBOL KANAN (User / Login) */}
         <Stack flex={{ base: 1, md: 0 }} justify={'flex-end'} direction={'row'} spacing={6}>
           {user ? (
-            <HStack spacing={4}>
+            <HStack spacing={2}>
+              {/* Tombol Sewakan (Desktop) */}
               <Button
                 as={Link}
                 to="/add-product"
@@ -111,7 +116,7 @@ const Navbar = () => {
                 Sewakan Barang
               </Button>
 
-              {/* PERBAIKAN 2: Tombol Inbox ditaruh DI LUAR MenuButton, tapi masih di dalam HStack */}
+              {/* Tombol Chat */}
               <IconButton
                 as={Link}
                 to="/inbox"
@@ -122,6 +127,7 @@ const Navbar = () => {
                 size="md"
               />
 
+              {/* Avatar Dropdown */}
               <Menu>
                 <MenuButton as={Button} rounded={'full'} variant={'link'} cursor={'pointer'} minW={0}>
                   <Avatar size={'sm'} src={profile?.avatar_url} name={profile?.full_name} />
@@ -157,22 +163,73 @@ const Navbar = () => {
         </Stack>
       </Flex>
 
+      {/* 4. MENU MOBILE (COLLAPSE) */}
       <Collapse in={isOpen} animateOpacity>
-        <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }}>
-          <Link to="/" onClick={onToggle}>Home</Link>
+        <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }} borderBottom="1px" borderColor="gray.200">
+          
+          <MobileNavItem label="Home" to="/" onClick={onToggle} />
+          
           {user && (
              <>
-               <Link to="/inbox" onClick={onToggle}>Inbox Chat</Link> {/* Tambahan menu mobile */}
-               <Link to="/my-rentals" onClick={onToggle}>Riwayat Sewa</Link>
-               <Link to="/incoming-orders" onClick={onToggle}>Pesanan Masuk</Link>
-               <Link to="/add-product" onClick={onToggle}>Sewakan Barang</Link>
-               <Link to="/edit-profile" onClick={onToggle}>Edit Profil</Link>
+               <Text fontWeight="bold" color="gray.500" fontSize="xs" mt={2} mb={1} textTransform="uppercase">Menu Penyewa</Text>
+               <MobileNavItem label="Inbox Chat" to="/inbox" onClick={onToggle} />
+               <MobileNavItem label="Riwayat Sewa" to="/my-rentals" onClick={onToggle} />
+               
+               <Text fontWeight="bold" color="gray.500" fontSize="xs" mt={2} mb={1} textTransform="uppercase">Menu Pemilik</Text>
+               <MobileNavItem label="Sewakan Barang" to="/add-product" onClick={onToggle} />
+               <MobileNavItem label="Pesanan Masuk" to="/incoming-orders" onClick={onToggle} />
+               
+               <Text fontWeight="bold" color="gray.500" fontSize="xs" mt={2} mb={1} textTransform="uppercase">Akun</Text>
+               <MobileNavItem label="Edit Profil" to="/edit-profile" onClick={onToggle} />
+               <Button size="sm" colorScheme="red" variant="outline" w="full" mt={2} onClick={handleLogout}>
+                 Logout
+               </Button>
              </>
+          )}
+
+          {!user && (
+            <Stack mt={4}>
+              <Button as={Link} to="/login" w="full" variant="outline">Masuk</Button>
+              <Button as={Link} to="/register" w="full" colorScheme="red">Daftar</Button>
+            </Stack>
           )}
         </Stack>
       </Collapse>
     </Box>
   );
 };
+
+// --- KOMPONEN KECIL UNTUK TOMBOL MOBILE YANG RAPI ---
+const MobileNavItem = ({ label, to, onClick }) => {
+  return (
+    <Stack spacing={4} onClick={onClick}>
+      <Flex
+        py={2}
+        as={Link}
+        to={to}
+        justify={'space-between'}
+        align={'center'}
+        _hover={{ textDecoration: 'none' }}>
+        <Text fontWeight={600} color={useColorModeValue('gray.600', 'gray.200')}>
+          {label}
+        </Text>
+        <Icon as={ChevronRightIcon} w={5} h={5} color="gray.400" />
+      </Flex>
+    </Stack>
+  );
+};
+
+// --- KOMPONEN KECIL UNTUK TOMBOL DESKTOP ---
+const DesktopLink = ({ to, label }) => (
+  <Link to={to}>
+    <Text 
+      fontSize="sm" 
+      fontWeight={500} 
+      _hover={{ textDecoration: 'none', color: 'red.500' }}
+    >
+      {label}
+    </Text>
+  </Link>
+);
 
 export default Navbar;

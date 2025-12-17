@@ -12,62 +12,59 @@ const InboxPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    // Definisi fungsi dipindahkan ke DALAM useEffect
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
 
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Ambil semua pesan yang melibatkan user (sebagai pengirim ATAU penerima)
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:sender_id (id, full_name, avatar_url),
-          receiver:receiver_id (id, full_name, avatar_url)
-        `)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order('created_at', { ascending: false }); // Pesan terbaru di atas
-
-      if (error) throw error;
-
-      // PROSES DATA: Kelompokkan per lawan bicara (Unique Conversation)
-      const uniqueChats = [];
-      const visitedIds = new Set();
-
-      data.forEach((msg) => {
-        // Tentukan siapa lawan bicaranya
-        const isMeSender = msg.sender_id === user.id;
-        const partner = isMeSender ? msg.receiver : msg.sender;
-        
-        // Jika partner ini belum ada di list, masukkan sebagai percakapan baru
-        if (!visitedIds.has(partner.id)) {
-          visitedIds.add(partner.id);
-          uniqueChats.push({
-            partnerId: partner.id,
-            partnerName: partner.full_name,
-            partnerAvatar: partner.avatar_url,
-            lastMessage: msg.content,
-            timestamp: msg.created_at
-          });
+        if (!user) {
+          navigate('/login');
+          return;
         }
-      });
 
-      setConversations(uniqueChats);
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            *,
+            sender:sender_id (id, full_name, avatar_url),
+            receiver:receiver_id (id, full_name, avatar_url)
+          `)
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .order('created_at', { ascending: false });
 
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (error) throw error;
+
+        const uniqueChats = [];
+        const visitedIds = new Set();
+
+        data.forEach((msg) => {
+          const isMeSender = msg.sender_id === user.id;
+          const partner = isMeSender ? msg.receiver : msg.sender;
+          
+          if (!visitedIds.has(partner.id)) {
+            visitedIds.add(partner.id);
+            uniqueChats.push({
+              partnerId: partner.id,
+              partnerName: partner.full_name,
+              partnerAvatar: partner.avatar_url,
+              lastMessage: msg.content,
+              timestamp: msg.created_at
+            });
+          }
+        });
+
+        setConversations(uniqueChats);
+
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [navigate]); // Dependency aman
 
   if (loading) return <Flex justify="center" h="100vh" align="center"><Spinner size="xl" /></Flex>;
 
