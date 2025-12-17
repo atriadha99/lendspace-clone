@@ -2,28 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Container, Heading, FormControl, FormLabel, Input, Button, useToast, VStack, Avatar, Center, Spinner, Flex
+  Box, Container, Heading, FormControl, FormLabel, Input, Button, useToast, VStack, Avatar, Center, Spinner, Flex,
+  useColorModeValue // <--- Import ini
 } from '@chakra-ui/react';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
   const toast = useToast();
   
-  // State Loading & Updating
-  const [loading, setLoading] = useState(true); // Sekarang variabel ini akan kita pakai
+  // Variabel Warna Dinamis
+  const bgForm = useColorModeValue('white', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'white');
+
+  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   
-  // State Data Profile
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
 
-  // PERBAIKAN 2: Pindahkan fungsi getProfile ke DALAM useEffect
   useEffect(() => {
     const getProfile = async () => {
       try {
-        setLoading(true); // Mulai loading
+        setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
@@ -39,7 +41,6 @@ const EditProfilePage = () => {
 
         if (error) throw error;
         
-        // Isi form dengan data database
         if (data) {
           setFullName(data.full_name || '');
           setPhone(data.phone || '');
@@ -50,12 +51,12 @@ const EditProfilePage = () => {
       } catch (error) {
         console.error('Error fetching profile:', error);
       } finally {
-        setLoading(false); // Selesai loading
+        setLoading(false);
       }
     };
 
     getProfile();
-  }, [navigate]); // Dependency array aman
+  }, [navigate]);
 
   const handleUpdate = async () => {
     try {
@@ -83,7 +84,6 @@ const EditProfilePage = () => {
     }
   };
 
-  // PERBAIKAN 1: Gunakan variable 'loading' untuk menampilkan Spinner
   if (loading) {
     return (
       <Flex justify="center" align="center" h="100vh">
@@ -94,7 +94,8 @@ const EditProfilePage = () => {
 
   return (
     <Container maxW="container.sm" py={10}>
-      <Box p={8} bg="white" shadow="lg" borderRadius="xl">
+      {/* Pasang variabel warna di sini */}
+      <Box p={8} bg={bgForm} color={textColor} shadow="lg" borderRadius="xl">
         <Heading mb={6}>Edit Profil</Heading>
         <VStack spacing={4} align="stretch">
           <Center>

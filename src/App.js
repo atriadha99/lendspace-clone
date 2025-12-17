@@ -12,6 +12,7 @@ import ChatPage from './pages/ChatPage';
 import InboxPage from './pages/InboxPage';
 import TermsPage from './pages/TermsPage';
 import CatalogPage from './pages/CatalogPage';
+import MembershipPage from './pages/MembershipPage';
 
 // --- IMPORT HALAMAN YANG TADI ERROR ---
 import AddProductPage from './pages/AddProductPage';
@@ -31,6 +32,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/membership" element={<MembershipPage />} />
         
         {/* Halaman yang butuh Login */}
         <Route path="/my-rentals" element={<MyRentalsPage />} />

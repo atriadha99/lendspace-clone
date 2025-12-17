@@ -4,17 +4,21 @@ import { supabase } from '../lib/supabaseClient';
 import {
   Box, Flex, Text, Button, Stack, useColorModeValue,
   Menu, MenuButton, MenuList, MenuItem, Avatar,
-  IconButton, Collapse, useDisclosure, HStack, Icon
+  IconButton, Collapse, useDisclosure, HStack, Icon,
+  useColorMode // <--- 1. Import Hook ColorMode
 } from '@chakra-ui/react';
-import { HamburgerIcon, CloseIcon, AddIcon, ChatIcon, ChevronRightIcon } from '@chakra-ui/icons';
+// 2. Import Icon Bulan & Matahari
+import { HamburgerIcon, CloseIcon, AddIcon, ChatIcon, ChevronRightIcon, MoonIcon, SunIcon } from '@chakra-ui/icons';
 
 const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
+  // 3. Ambil fungsi toggle dari Chakra UI
+  const { colorMode, toggleColorMode } = useColorMode();
+  
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  // --- LOGIC AUTH ---
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,7 +63,6 @@ const Navbar = () => {
         borderColor={useColorModeValue('gray.200', 'gray.900')}
         align={'center'}
       >
-        {/* 1. TOMBOL HAMBURGER (MOBILE ONLY) */}
         <Flex flex={{ base: 1, md: 'auto' }} ml={{ base: -2 }} display={{ base: 'flex', md: 'none' }}>
           <IconButton
             onClick={onToggle}
@@ -69,21 +72,19 @@ const Navbar = () => {
           />
         </Flex>
 
-        {/* 2. LOGO & MENU DESKTOP */}
         <Flex flex={{ base: 1 }} justify={{ base: 'center', md: 'start' }}>
           <Text
             textAlign={useColorModeValue('left', 'center')}
             fontFamily={'heading'}
             fontWeight="bold"
             fontSize="xl"
-            color={'red.500'}
+            color={useColorModeValue('red.500', 'red.300')}
             cursor="pointer"
             onClick={() => navigate('/')}
           >
             Lendspace
           </Text>
 
-          {/* Desktop Links */}
           <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
             <Stack direction={'row'} spacing={4} align="center">
               <DesktopLink to="/" label="Home" />
@@ -97,11 +98,17 @@ const Navbar = () => {
           </Flex>
         </Flex>
 
-        {/* 3. TOMBOL KANAN (User / Login) */}
-        <Stack flex={{ base: 1, md: 0 }} justify={'flex-end'} direction={'row'} spacing={6}>
+        <Stack flex={{ base: 1, md: 0 }} justify={'flex-end'} direction={'row'} spacing={3}>
+          {/* 4. TOMBOL DARK MODE (Bisa diakses siapa saja) */}
+          <IconButton
+            icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+            onClick={toggleColorMode}
+            variant="ghost"
+            aria-label="Toggle Dark Mode"
+          />
+
           {user ? (
             <HStack spacing={2}>
-              {/* Tombol Sewakan (Desktop) */}
               <Button
                 as={Link}
                 to="/add-product"
@@ -116,7 +123,6 @@ const Navbar = () => {
                 Sewakan Barang
               </Button>
 
-              {/* Tombol Chat */}
               <IconButton
                 as={Link}
                 to="/inbox"
@@ -127,12 +133,11 @@ const Navbar = () => {
                 size="md"
               />
 
-              {/* Avatar Dropdown */}
               <Menu>
                 <MenuButton as={Button} rounded={'full'} variant={'link'} cursor={'pointer'} minW={0}>
                   <Avatar size={'sm'} src={profile?.avatar_url} name={profile?.full_name} />
                 </MenuButton>
-                <MenuList>
+                <MenuList zIndex={999}> {/* zIndex agar tidak tertutup */}
                   <MenuItem onClick={() => navigate('/edit-profile')}>Edit Profil</MenuItem>
                   <MenuItem onClick={() => navigate('/add-product')}>Sewakan Barang</MenuItem>
                   <MenuItem onClick={() => navigate('/incoming-orders')}>Pesanan Masuk</MenuItem>
@@ -163,12 +168,9 @@ const Navbar = () => {
         </Stack>
       </Flex>
 
-      {/* 4. MENU MOBILE (COLLAPSE) */}
       <Collapse in={isOpen} animateOpacity>
-        <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }} borderBottom="1px" borderColor="gray.200">
-          
+        <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }}>
           <MobileNavItem label="Home" to="/" onClick={onToggle} />
-          
           {user && (
              <>
                <Text fontWeight="bold" color="gray.500" fontSize="xs" mt={2} mb={1} textTransform="uppercase">Menu Penyewa</Text>
@@ -186,7 +188,6 @@ const Navbar = () => {
                </Button>
              </>
           )}
-
           {!user && (
             <Stack mt={4}>
               <Button as={Link} to="/login" w="full" variant="outline">Masuk</Button>
@@ -199,7 +200,6 @@ const Navbar = () => {
   );
 };
 
-// --- KOMPONEN KECIL UNTUK TOMBOL MOBILE YANG RAPI ---
 const MobileNavItem = ({ label, to, onClick }) => {
   return (
     <Stack spacing={4} onClick={onClick}>
@@ -219,7 +219,6 @@ const MobileNavItem = ({ label, to, onClick }) => {
   );
 };
 
-// --- KOMPONEN KECIL UNTUK TOMBOL DESKTOP ---
 const DesktopLink = ({ to, label }) => (
   <Link to={to}>
     <Text 

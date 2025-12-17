@@ -4,27 +4,32 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Container, Heading, FormControl, FormLabel, Input, 
   Textarea, Button, NumberInput, NumberInputField, VStack, 
-  Select, useToast, Image, Center
+  Select, useToast, Image, Center, Spinner, Flex, 
+  useColorModeValue
 } from '@chakra-ui/react';
 
 const AddProductPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
   
+  // --- 1. PINDAHKAN SEMUA HOOKS WARNA KE SINI (PALING ATAS) ---
+  const bgForm = useColorModeValue('white', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const borderDashedColor = useColorModeValue('gray.300', 'gray.500'); // Variabel baru
+  const bgUploadPlaceholder = useColorModeValue('gray.50', 'gray.600'); // Variabel baru
+
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  // Form State
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
     category: 'Elektronik',
-    deposit_percent: 30 // Default DP 30%
+    deposit_percent: 30
   });
 
-  // Handle Gambar
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -48,11 +53,10 @@ const AddProductPage = () => {
         return;
       }
 
-      // 1. Upload Gambar
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `product-${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
-        .from('products') // Pastikan bucket 'products' sudah dibuat & public
+        .from('products')
         .upload(fileName, imageFile);
 
       if (uploadError) throw uploadError;
@@ -61,9 +65,8 @@ const AddProductPage = () => {
         .from('products')
         .getPublicUrl(fileName);
 
-      // 2. Simpan Data Produk
       const { error } = await supabase.from('products').insert({
-        lender_id: user.id, // Sesuaikan dengan nama kolom di DB Anda (lender_id / user_id)
+        lender_id: user.id,
         name: form.name,
         description: form.description,
         price: parseInt(form.price),
@@ -76,7 +79,7 @@ const AddProductPage = () => {
       if (error) throw error;
 
       toast({ title: "Barang berhasil diiklankan!", status: "success" });
-      navigate('/'); // Balik ke Home
+      navigate('/'); 
 
     } catch (error) {
       toast({ title: "Gagal upload", description: error.message, status: "error" });
@@ -85,24 +88,27 @@ const AddProductPage = () => {
     }
   };
 
+  if (loading) return <Flex justify="center" h="100vh" align="center"><Spinner size="xl" /></Flex>;
+
   return (
     <Container maxW="container.md" py={10}>
-      <Box p={8} bg="white" shadow="lg" borderRadius="xl">
+      <Box p={8} bg={bgForm} color={textColor} shadow="lg" borderRadius="xl">
         <Heading mb={6}>Sewakan Barang Anda</Heading>
 
         <VStack spacing={4} align="stretch">
           
-          {/* Upload Foto */}
           <FormControl>
             <FormLabel>Foto Barang</FormLabel>
+            {/* 2. GUNAKAN VARIABEL YANG SUDAH DIBUAT DI ATAS */}
             <Center 
               w="full" h="200px" 
-              border="2px dashed gray" 
+              border="2px dashed"
+              borderColor={borderDashedColor} // <-- Pakai variabel
               borderRadius="md" 
               cursor="pointer"
               flexDirection="column"
               onClick={() => document.getElementById('fileInput').click()}
-              bg={preview ? 'gray.100' : 'transparent'}
+              bg={preview ? 'transparent' : bgUploadPlaceholder} // <-- Pakai variabel
             >
               {preview ? (
                 <Image src={preview} h="100%" objectFit="contain" />
@@ -153,7 +159,7 @@ const AddProductPage = () => {
             <Textarea placeholder="Jelaskan kondisi barang, kelengkapan, dll." onChange={(e) => setForm({...form, description: e.target.value})} />
           </FormControl>
 
-          <Button colorScheme="red" size="lg" onClick={handleSubmit} isLoading={loading}>
+          <Button colorScheme="red" size="lg" onClick={handleSubmit}>
             Mulai Sewakan
           </Button>
 

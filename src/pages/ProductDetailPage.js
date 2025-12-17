@@ -5,7 +5,8 @@ import {
   Box, Container, Grid, Image, Heading, Text, VStack, HStack,
   Avatar, Divider, Button, Input, Stack,
   Alert, AlertIcon, Flex, useToast, Spinner,
-  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure, Center
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure,
+  Badge // Tambahan Badge
 } from '@chakra-ui/react';
 import { ChatIcon, CheckCircleIcon } from '@chakra-ui/icons';
 
@@ -17,8 +18,10 @@ const ProductDetailPage = () => {
   // Modal Control (Untuk Pop-up Pembayaran)
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // State Data
   const [product, setProduct] = useState(null);
   const [user, setUser] = useState(null);
+  const [membership, setMembership] = useState(null); // State Membership
   const [loading, setLoading] = useState(true);
   const [renting, setRenting] = useState(false);
 
@@ -28,6 +31,7 @@ const ProductDetailPage = () => {
   const [totalDays, setTotalDays] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
 
+  // 1. FETCH DATA (Product & User Membership)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -35,6 +39,17 @@ const ProductDetailPage = () => {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         setUser(currentUser);
 
+        // Ambil data Membership User (jika login)
+        if (currentUser) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('membership_tier, points')
+            .eq('id', currentUser.id)
+            .single();
+          setMembership(profileData);
+        }
+
+        // Ambil Data Produk
         const { data, error } = await supabase
           .from('products')
           .select(`*, profiles:lender_id (id, full_name, avatar_url)`)
@@ -43,6 +58,7 @@ const ProductDetailPage = () => {
 
         if (error) throw error;
         setProduct(data);
+
       } catch (err) {
         toast({ title: "Error", description: err.message, status: "error" });
       } finally {
@@ -52,15 +68,25 @@ const ProductDetailPage = () => {
     fetchData();
   }, [id, toast]);
 
+  // 2. LOGIKA DISKON MEMBER
+  // Cek apakah user member (Premium/VIP)
+  const isMember = membership?.membership_tier === 'premium' || membership?.membership_tier === 'vip';
+  const discount = isMember ? 0.10 : 0; // Diskon 10%
+  // Harga per hari setelah diskon
+  const finalPricePerDay = product ? product.price * (1 - discount) : 0;
+
+  // 3. HITUNG TOTAL HARGA
   useEffect(() => {
     if (startDate && endDate && product) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) || 1;
+      
       setTotalDays(diffDays);
-      setTotalPrice(diffDays * product.price);
+      // Gunakan harga diskon untuk perhitungan total
+      setTotalPrice(diffDays * finalPricePerDay);
     }
-  }, [startDate, endDate, product]);
+  }, [startDate, endDate, product, finalPricePerDay]);
 
   const handleChat = () => {
     navigate(`/chat/${product.lender_id}`, {
@@ -74,20 +100,19 @@ const ProductDetailPage = () => {
     });
   };
 
-  // 1. Trigger saat tombol "Booking" diklik -> Buka Modal, Jangan langsung save DB
   const onBookingClick = () => {
     if (!user) return navigate('/login');
     onOpen(); // Buka Pop-up QRIS
   };
 
-  // 2. Proses Pembayaran & Simpan ke DB
+  // 4. PROSES PEMBAYARAN (SIMPAN DB + POIN + AUTO UPGRADE)
   const handlePaymentSuccess = async () => {
     setRenting(true);
     const depositPercent = product.deposit_percent || 30;
     const depositAmount = Math.round(totalPrice * depositPercent / 100);
 
     try {
-      // Simpan ke Supabase
+      // A. Simpan Booking ke Supabase
       const { error } = await supabase.from('bookings').insert({
         user_id: user.id,
         product_id: product.id,
@@ -96,16 +121,49 @@ const ProductDetailPage = () => {
         total_days: totalDays,
         total_price: totalPrice,
         deposit_amount: depositAmount,
-        deposit_paid: true, // Anggap sudah dibayar lunas DP-nya
+        deposit_paid: true, 
         remaining_amount: totalPrice - depositAmount,
         status: 'confirmed',
         payment_status: 'partial'
       });
 
       if (error) throw error;
-      
-      onClose(); // Tutup Modal
-      toast({ title: "Pembayaran Berhasil!", description: "Booking telah dikonfirmasi.", status: "success", duration: 5000 });
+
+      // B. LOGIKA TAMBAHAN: Update Poin & Cek Auto-Upgrade
+      let newTier = membership?.membership_tier || 'regular';
+      let expiry = new Date(); // default hari ini
+
+      // Syarat Auto-Member: Harga > 2jt/hari AND Sewa >= 3 Hari
+      if (product.price >= 2000000 && totalDays >= 3) {
+         newTier = 'premium';
+         expiry.setDate(expiry.getDate() + 30); // Bonus 30 hari
+         toast({ 
+           title: "🎉 BONUS UPGRADE!", 
+           description: "Anda otomatis jadi Premium Member selama 30 hari!", 
+           status: "info", 
+           duration: 7000,
+           isClosable: true
+         });
+      }
+
+      // Hitung Poin (1 poin setiap Rp 10.000)
+      const earnedPoints = Math.floor(totalPrice / 10000);
+
+      // Update Profile User (Poin & Tier)
+      await supabase.from('profiles').update({
+        points: (membership?.points || 0) + earnedPoints,
+        membership_tier: newTier === 'regular' ? (membership?.membership_tier || 'regular') : newTier,
+        ...(newTier !== 'regular' && { membership_expiry: expiry })
+      }).eq('id', user.id);
+
+      // C. Selesai
+      onClose();
+      toast({ 
+        title: "Pembayaran Berhasil!", 
+        description: `Booking dikonfirmasi. Anda dapat +${earnedPoints} Poin!`, 
+        status: "success", 
+        duration: 5000 
+      });
       navigate('/my-rentals');
       
     } catch (err) {
@@ -129,9 +187,27 @@ const ProductDetailPage = () => {
         <VStack align="stretch" spacing={6}>
           <Image src={product.image_url} h="400px" objectFit="cover" borderRadius="xl" />
           <Heading>{product.name}</Heading>
-          <Text fontSize="2xl" color="red.500" fontWeight="bold">
-            Rp {product.price.toLocaleString()}/hari
-          </Text>
+
+          {/* Harga & Diskon */}
+          <Box>
+            {isMember && (
+              <Badge colorScheme="green" mb={1} fontSize="0.9em">
+                Diskon Member 10%
+              </Badge>
+            )}
+            <Text fontSize="2xl" color="red.500" fontWeight="bold">
+              {isMember ? (
+                 <>
+                   <Text as="span" textDecoration="line-through" color="gray.400" fontSize="lg" mr={2}>
+                     Rp {product.price.toLocaleString()}
+                   </Text>
+                   Rp {finalPricePerDay.toLocaleString()}/hari
+                 </>
+              ) : (
+                 `Rp ${product.price.toLocaleString()}/hari`
+              )}
+            </Text>
+          </Box>
           
           <HStack p={4} bg="gray.50" justify="space-between" borderRadius="lg" border="1px solid" borderColor="gray.200">
             <Flex align="center" gap={3}>
@@ -149,7 +225,7 @@ const ProductDetailPage = () => {
           </Box>
         </VStack>
 
-        {/* KOLOM KANAN */}
+        {/* KOLOM KANAN (FORM BOOKING) */}
         <Box p={6} bg="white" shadow="xl" borderRadius="xl" h="fit-content" border="1px solid" borderColor="gray.100">
           <Heading size="md" mb={4}>Atur Jadwal Sewa</Heading>
           <Stack spacing={4}>
@@ -166,6 +242,12 @@ const ProductDetailPage = () => {
               <Box bg="red.50" p={4} borderRadius="md" border="1px dashed" borderColor="red.300">
                 <Flex justify="space-between"><Text>Durasi</Text><Text fontWeight="bold">{totalDays} Hari</Text></Flex>
                 <Flex justify="space-between" mt={1}><Text>Total Harga</Text><Text fontWeight="bold">Rp {totalPrice.toLocaleString()}</Text></Flex>
+                
+                {/* Info Poin */}
+                <Flex justify="end" mt={1}>
+                   <Badge colorScheme="purple">Potensi Poin: +{Math.floor(totalPrice / 10000)}</Badge>
+                </Flex>
+
                 <Divider my={3} borderColor="red.200" />
                 <Flex justify="space-between" fontWeight="bold" color="red.600" fontSize="lg">
                   <Text>Bayar DP ({product.deposit_percent || 30}%)</Text>
@@ -179,7 +261,6 @@ const ProductDetailPage = () => {
               <Alert status="warning" borderRadius="md"><AlertIcon />Ini barang Anda sendiri.</Alert>
             ) : (
               <>
-                {/* Tombol diganti ke onBookingClick */}
                 <Button 
                   colorScheme="red" 
                   size="lg" 
@@ -209,7 +290,6 @@ const ProductDetailPage = () => {
             <VStack spacing={4} align="center" py={4}>
               <Text fontSize="sm" color="gray.500">Silakan scan QRIS di bawah ini</Text>
               
-              {/* Gambar QRIS Dummy */}
               <Box p={2} border="2px solid" borderColor="gray.200" borderRadius="lg">
                 <Image 
                   src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" 
@@ -223,7 +303,7 @@ const ProductDetailPage = () => {
               
               <Alert status="info" fontSize="sm" borderRadius="md">
                 <AlertIcon />
-                Ini adalah simulasi. Klik tombol di bawah untuk konfirmasi pembayaran otomatis.
+                Ini simulasi. Klik konfirmasi untuk proses otomatis.
               </Alert>
             </VStack>
           </ModalBody>
