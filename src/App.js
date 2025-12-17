@@ -15,6 +15,7 @@ import TermsPage from './pages/TermsPage';
 import ChatPage from './pages/ChatPage';
 import MyRentalsPage from './pages/MyRentalsPage';
 import MyLendingsPage from './pages/MyLendingsPage';
+import InboxPage from './pages/InboxPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/chat/:receiverId" element={<ChatPage />} />
           <Route path="/my-rentals" element={<MyRentalsPage />} />
           <Route path="/my-lendings" element={<MyLendingsPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
         </Routes>
       </Container>
     </Box>

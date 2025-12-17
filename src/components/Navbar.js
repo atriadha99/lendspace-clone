@@ -6,7 +6,8 @@ import {
   Menu, MenuButton, MenuList, MenuItem, Avatar,
   IconButton, Collapse, useDisclosure, HStack
 } from '@chakra-ui/react';
-import { HamburgerIcon, CloseIcon, AddIcon } from '@chakra-ui/icons';
+// PERBAIKAN 1: Tambahkan ChatIcon di sini
+import { HamburgerIcon, CloseIcon, AddIcon, ChatIcon } from '@chakra-ui/icons';
 
 const Navbar = () => {
   const { isOpen, onToggle } = useDisclosure();
@@ -14,9 +15,7 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  // Cek Status Login & Ambil Foto Profil
   useEffect(() => {
-    // 1. Cek User saat ini
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -33,7 +32,6 @@ const Navbar = () => {
 
     getUser();
 
-    // 2. Dengar perubahan auth (Login/Logout realtime)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session) setProfile(null);
@@ -42,11 +40,10 @@ const Navbar = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fungsi Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
-    window.location.reload(); // Refresh agar state bersih
+    window.location.reload();
   };
 
   return (
@@ -62,7 +59,6 @@ const Navbar = () => {
         borderColor={useColorModeValue('gray.200', 'gray.900')}
         align={'center'}
       >
-        {/* Mobile Menu Button */}
         <Flex flex={{ base: 1, md: 'auto' }} ml={{ base: -2 }} display={{ base: 'flex', md: 'none' }}>
           <IconButton
             onClick={onToggle}
@@ -72,7 +68,6 @@ const Navbar = () => {
           />
         </Flex>
 
-        {/* LOGO */}
         <Flex flex={{ base: 1 }} justify={{ base: 'center', md: 'start' }}>
           <Text
             textAlign={useColorModeValue('left', 'center')}
@@ -86,7 +81,6 @@ const Navbar = () => {
             Lendspace
           </Text>
 
-          {/* Desktop Menu */}
           <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
             <Stack direction={'row'} spacing={4} align="center">
               <Link to="/">Home</Link>
@@ -100,7 +94,6 @@ const Navbar = () => {
           </Flex>
         </Flex>
 
-        {/* Tombol Kanan (Login/User) */}
         <Stack flex={{ base: 1, md: 0 }} justify={'flex-end'} direction={'row'} spacing={6}>
           {user ? (
             <HStack spacing={4}>
@@ -117,6 +110,17 @@ const Navbar = () => {
               >
                 Sewakan Barang
               </Button>
+
+              {/* PERBAIKAN 2: Tombol Inbox ditaruh DI LUAR MenuButton, tapi masih di dalam HStack */}
+              <IconButton
+                as={Link}
+                to="/inbox"
+                aria-label="Inbox"
+                icon={<ChatIcon />}
+                variant="ghost"
+                colorScheme="red"
+                size="md"
+              />
 
               <Menu>
                 <MenuButton as={Button} rounded={'full'} variant={'link'} cursor={'pointer'} minW={0}>
@@ -153,12 +157,12 @@ const Navbar = () => {
         </Stack>
       </Flex>
 
-      {/* Mobile Menu */}
       <Collapse in={isOpen} animateOpacity>
         <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }}>
           <Link to="/" onClick={onToggle}>Home</Link>
           {user && (
              <>
+               <Link to="/inbox" onClick={onToggle}>Inbox Chat</Link> {/* Tambahan menu mobile */}
                <Link to="/my-rentals" onClick={onToggle}>Riwayat Sewa</Link>
                <Link to="/incoming-orders" onClick={onToggle}>Pesanan Masuk</Link>
                <Link to="/add-product" onClick={onToggle}>Sewakan Barang</Link>
