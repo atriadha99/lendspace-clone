@@ -1,11 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Container } from '@chakra-ui/react';
-
-// Components
 import Navbar from './components/Navbar';
-
-// Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -17,6 +13,8 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ChatPage from './pages/ChatPage';
+import MyRentalsPage from './pages/MyRentalsPage';
+import MyLendingsPage from './pages/MyLendingsPage';
 
 function App() {
   return (
@@ -37,6 +35,8 @@ function App() {
           <Route path="/withdraw" element={<WithdrawPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/chat/:receiverId" element={<ChatPage />} />
+          <Route path="/my-rentals" element={<MyRentalsPage />} />
+          <Route path="/my-lendings" element={<MyLendingsPage />} />
         </Routes>
       </Container>
     </Box>
