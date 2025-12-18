@@ -138,6 +138,7 @@ const Navbar = () => {
                   <Avatar size={'sm'} src={profile?.avatar_url} name={profile?.full_name} />
                 </MenuButton>
                 <MenuList zIndex={999}> {/* zIndex agar tidak tertutup */}
+                  <MenuItem onClick={() => navigate('/profile')}>Profil Saya</MenuItem>
                   <MenuItem onClick={() => navigate('/edit-profile')}>Edit Profil</MenuItem>
                   <MenuItem onClick={() => navigate('/add-product')}>Sewakan Barang</MenuItem>
                   <MenuItem onClick={() => navigate('/incoming-orders')}>Pesanan Masuk</MenuItem>

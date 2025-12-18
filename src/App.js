@@ -13,6 +13,7 @@ import InboxPage from './pages/InboxPage';
 import TermsPage from './pages/TermsPage';
 import CatalogPage from './pages/CatalogPage';
 import MembershipPage from './pages/MembershipPage';
+import ProfilePage from './pages/ProfilePage';
 
 // --- IMPORT HALAMAN YANG TADI ERROR ---
 import AddProductPage from './pages/AddProductPage';
@@ -37,6 +38,7 @@ function App() {
         {/* Halaman yang butuh Login */}
         <Route path="/my-rentals" element={<MyRentalsPage />} />
         <Route path="/inbox" element={<InboxPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/chat/:receiverId" element={<ChatPage />} />
 
         {/* --- INI YANG MEMPERBAIKI ERROR 'NO ROUTES MATCHED' --- */}

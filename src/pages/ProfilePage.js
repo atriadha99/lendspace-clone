@@ -1,204 +1,165 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Sesuaikan path
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Container, VStack, Heading, FormControl, FormLabel, Input, 
-  Button, Avatar, useToast, Textarea, Center, InputGroup, InputLeftAddon
+  Box, Container, VStack, Heading, Text, Avatar, 
+  Badge, Card, CardBody, CardHeader, Stack, 
+  Button, Divider, Flex, Stat, StatLabel, StatNumber, 
+  useColorModeValue, Spinner, Grid, Icon, Tooltip
 } from '@chakra-ui/react';
+import { EditIcon, StarIcon, PhoneIcon, CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
+import { FaMapMarkerAlt, FaCrown, FaIdCard } from 'react-icons/fa';
 
-const EditProfilePage = () => {
+const ProfilePage = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  
+  const [profile, setProfile] = useState(null);
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [session, setSession] = useState(null);
 
-  // State Form
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  // Warna Dinamis
+  const bgCard = useColorModeValue('white', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const mutedColor = useColorModeValue('gray.500', 'gray.400');
 
-  // 1. Ambil Data User Saat Ini (Fetch)
   useEffect(() => {
-    const getProfile = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return navigate('/login');
+        setEmail(user.email);
 
-        if (!user) {
-          navigate('/login');
-          return;
-        }
-        setSession(user);
-
-        // Ambil data dari tabel profiles
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, phone, address, avatar_url')
+          .select('*')
           .eq('id', user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
+        if (error) throw error;
+        setProfile(data);
 
-        if (data) {
-          setFullName(data.full_name || '');
-          setPhone(data.phone || '');
-          setAddress(data.address || '');
-          setAvatarUrl(data.avatar_url || '');
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error.message);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
-    getProfile();
+    fetchData();
   }, [navigate]);
 
-  // 2. Fungsi Upload Foto Profil
-  const uploadAvatar = async (event) => {
-    try {
-      setUploadingImage(true);
+  if (loading) return <Flex justify="center" h="100vh" align="center"><Spinner size="xl" /></Flex>;
 
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('Pilih gambar terlebih dahulu.');
-      }
+  const tier = profile?.membership_tier || 'regular';
+  const isVip = tier === 'vip';
+  const tierColor = isVip ? 'yellow' : tier === 'premium' ? 'blue' : 'gray';
 
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${session.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      // Upload ke bucket 'avatars'
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Dapatkan Public URL
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      
-      setAvatarUrl(data.publicUrl); // Update preview di layar
-      toast({ title: "Foto berhasil diupload!", status: "success" });
-
-    } catch (error) {
-      toast({ title: "Gagal upload foto", description: error.message, status: "error" });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  // 3. Fungsi Simpan Perubahan (Update Database)
-  const updateProfile = async () => {
-    try {
-      setUpdating(true);
-
-      const updates = {
-        id: session.id, // ID User sebagai kunci update
-        full_name: fullName,
-        phone: phone,
-        address: address,
-        avatar_url: avatarUrl,
-        updated_at: new Date(),
-      };
-
-      const { error } = await supabase.from('profiles').upsert(updates);
-
-      if (error) throw error;
-
-      toast({ title: "Profil berhasil diperbarui!", status: "success" });
-      navigate('/'); // Kembali ke Home atau Halaman Profil
-
-    } catch (error) {
-      toast({ title: "Gagal update profil", description: error.message, status: "error" });
-    } finally {
-      setUpdating(false);
-    }
-  };
+  // Status Verifikasi
+  const isPhoneVerified = profile?.is_phone_verified;
+  const isKtpVerified = profile?.is_ktp_verified;
 
   return (
-    <Container maxW="container.sm" py={10}>
-      <Box bg="white" p={8} shadow="lg" borderRadius="xl">
-        <Heading mb={6} textAlign="center">Edit Profil</Heading>
+    <Container maxW="container.md" py={10}>
+      <VStack spacing={6}>
+        
+        {/* --- HEADER PROFIL --- */}
+        <Box w="full" bg={bgCard} p={6} borderRadius="xl" shadow="lg" textAlign="center" position="relative" borderTop="4px solid" borderColor={isVip ? 'gold' : 'red.500'}>
+           <Button 
+             position="absolute" top={4} right={4} 
+             size="sm" leftIcon={<EditIcon />} 
+             colorScheme="gray" variant="outline"
+             onClick={() => navigate('/edit-profile')}
+           >
+             Edit / Verifikasi
+           </Button>
 
-        <VStack spacing={5}>
-          {/* Avatar Section */}
-          <Center flexDirection="column">
-            <Avatar size="2xl" src={avatarUrl} mb={4} name={fullName} />
-            <FormLabel
-              htmlFor="avatar-upload"
-              cursor="pointer"
-              bg="gray.100"
-              px={4}
-              py={2}
-              borderRadius="md"
-              _hover={{ bg: "gray.200" }}
-            >
-              {uploadingImage ? 'Mengupload...' : 'Ganti Foto'}
-            </FormLabel>
-            <Input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={uploadAvatar}
-              display="none"
-            />
-          </Center>
+           <Avatar 
+             size="2xl" 
+             src={profile?.avatar_url} 
+             name={profile?.full_name} 
+             border="4px solid" 
+             borderColor={isVip ? 'gold' : 'white'}
+             mb={4}
+           />
+           
+           <Heading size="lg" color={textColor} display="flex" alignItems="center" justifyContent="center" gap={2}>
+             {profile?.full_name || 'User Tanpa Nama'}
+             {isKtpVerified && (
+               <Tooltip label="Identitas Terverifikasi (KTP)">
+                 <Icon as={CheckCircleIcon} color="blue.400" w={5} h={5} />
+               </Tooltip>
+             )}
+           </Heading>
+           <Text color={mutedColor} mb={4}>{email}</Text>
 
-          {/* Form Fields */}
-          <FormControl>
-            <FormLabel>Nama Lengkap</FormLabel>
-            <Input 
-              value={fullName} 
-              onChange={(e) => setFullName(e.target.value)} 
-              placeholder="Nama Anda"
-            />
-          </FormControl>
+           <Flex justify="center" gap={2} wrap="wrap">
+             <Badge colorScheme={tierColor} px={3} py={1} borderRadius="full" display="flex" alignItems="center" gap={1}>
+               {isVip ? <Icon as={FaCrown} /> : <StarIcon />} {tier} MEMBER
+             </Badge>
+             
+             {isKtpVerified ? (
+                <Badge colorScheme="green" px={3} py={1} borderRadius="full" display="flex" alignItems="center" gap={1}>
+                  <Icon as={FaIdCard} /> KTP VERIFIED
+                </Badge>
+             ) : (
+                <Badge colorScheme="red" px={3} py={1} borderRadius="full" display="flex" alignItems="center" gap={1}>
+                  <WarningIcon /> BELUM VERIFIKASI KTP
+                </Badge>
+             )}
+           </Flex>
+        </Box>
 
-          <FormControl>
-            <FormLabel>Nomor WhatsApp</FormLabel>
-            <InputGroup>
-              <InputLeftAddon children="+62" />
-              <Input 
-                type="tel" 
-                value={phone} 
-                onChange={(e) => setPhone(e.target.value)} 
-                placeholder="8123456789"
-              />
-            </InputGroup>
-          </FormControl>
+        {/* --- STATISTIK --- */}
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={6} w="full">
+          <Card bg={bgCard} shadow="md" borderRadius="xl">
+            <CardBody>
+              <Stat textAlign="center">
+                <StatLabel color={mutedColor}>LendPoints</StatLabel>
+                <StatNumber fontSize="3xl" color="red.500">{profile?.points || 0}</StatNumber>
+              </Stat>
+            </CardBody>
+          </Card>
+          <Card bg={bgCard} shadow="md" borderRadius="xl">
+            <CardBody>
+              <Stat textAlign="center">
+                <StatLabel color={mutedColor}>Status Akun</StatLabel>
+                <StatNumber fontSize="xl" color={isKtpVerified && isPhoneVerified ? 'green.500' : 'orange.500'}>
+                  {isKtpVerified && isPhoneVerified ? 'Terpercaya' : 'Belum Lengkap'}
+                </StatNumber>
+              </Stat>
+            </CardBody>
+          </Card>
+        </Grid>
 
-          <FormControl>
-            <FormLabel>Alamat Lengkap</FormLabel>
-            <Textarea 
-              value={address} 
-              onChange={(e) => setAddress(e.target.value)} 
-              placeholder="Jalan, Kota, Kode Pos"
-            />
-          </FormControl>
+        {/* --- DETAIL INFO --- */}
+        <Card w="full" bg={bgCard} shadow="md" borderRadius="xl">
+          <CardHeader>
+            <Heading size="md">Informasi Kontak</Heading>
+          </CardHeader>
+          <CardBody>
+            <Stack divider={<Divider />} spacing={4}>
+              <Box>
+                <Heading size="xs" textTransform="uppercase" color={mutedColor} mb={1}>
+                  <PhoneIcon mr={2} /> WhatsApp
+                </Heading>
+                <Flex align="center" gap={2}>
+                  <Text fontSize="sm">{profile?.phone || '-'}</Text>
+                  {isPhoneVerified && <Icon as={CheckCircleIcon} color="green.500" w={4} h={4} />}
+                </Flex>
+              </Box>
+              <Box>
+                <Heading size="xs" textTransform="uppercase" color={mutedColor} mb={1}>
+                  <Icon as={FaMapMarkerAlt} mr={2} /> Alamat
+                </Heading>
+                <Text fontSize="sm">{profile?.address || '-'}</Text>
+              </Box>
+            </Stack>
+          </CardBody>
+        </Card>
 
-          <Button
-            colorScheme="blue"
-            w="full"
-            size="lg"
-            onClick={updateProfile}
-            isLoading={updating || uploadingImage}
-            loadingText="Menyimpan..."
-            mt={4}
-          >
-            Simpan Perubahan
-          </Button>
-        </VStack>
-      </Box>
+      </VStack>
     </Container>
   );
 };
 
-export default EditProfilePage;
+export default ProfilePage;
